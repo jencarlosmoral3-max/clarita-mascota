@@ -9,7 +9,7 @@
 | Hito | Estado |
 |---|---|
 | H0 andamiaje | Cerrado, PR #1 |
-| H1 cascarón PWA | Código cerrado, PR #3. **Deploy pendiente** (ver bloqueos) |
+| H1 cascarón PWA | Cerrado, PR #3. Deploy en GitHub Pages, PR #6 y #7 |
 | H2 bake-off visual | Cerrado |
 | H3 lógica y guardado | Cerrado, PR #2 |
 | H2 elección | CTO eligió **B** (48×48) el 2026-11-16; mock en `mocks/propuesta-b.html` |
@@ -31,20 +31,33 @@
 - Fotos de referencia en `fotos de la modelo del juego/`, fuera del repo por `.gitignore`.
 - Fuente "Pixelify Sans" autoalojada (`@fontsource/pixelify-sans`), sin peticiones externas.
 
-## Bloqueos que necesitan al CTO
+## Producción
 
-1. **Deploy a Vercel.** El CTO inició `npx vercel login` el 2026-11-16; falta confirmar que terminó
-   y con qué cuenta. El dominio de producción que se asigne es definitivo: cambiarlo tras la entrega
-   borra la partida.
-2. **EAS Simulator**: depende del deploy. `eas` no está instalado; falta comprobar plan de pago de
-   Expo (`eas simulator:availability --json`).
-3. **Prueba en el iPhone real**: Agregar a inicio, modo avión, notch y barra inferior.
+**https://jencarlosmoral3-max.github.io/clarita-mascota/** — GitHub Pages, desplegado por
+`.github/workflows/pages.yml` en cada merge a `main` (build con `BASE_PATH=/clarita-mascota/`).
+
+- Aprobado por el CTO el 2026-11-16: pidió GitHub Pages y él mismo hizo público el repo (Pages no
+  admite repos privados en el plan gratuito). Vercel descartado; `vercel.json` eliminado. Costo: 0.
+- **URL definitiva. No renombrar el repo ni moverlo de cuenta**: la partida guardada va atada al
+  origen y a la ruta; cambiarla borra a Clarita en el teléfono.
+- Verificado en vivo el 2026-11-16 con Playwright WebKit (perfil iPhone 13): pantalla de
+  instalación; en modo instalada simulado el juego carga, Alimentar y Pijama funcionan, el service
+  worker registra con scope de la subruta, y tras cortar la red y recargar el juego y la partida
+  siguen ahí. Sin errores de consola ni respuestas 4xx.
+- Revertir: desactivar Pages en Settings → Pages, o volver el repo a privado.
+- Público en el historial: nombre y correo del autor de los commits. Las fotos no están en el repo.
+
+## Pendiente (necesita al CTO o a la dueña)
+
+1. **Prueba en el iPhone real**: abrir la URL en Safari → Compartir → Agregar a inicio → abrir desde
+   el ícono; probar modo avión; revisar notch y barra inferior.
+2. **EAS Simulator** (opcional): `eas` no instalado; requiere plan de pago de Expo.
 
 ## Siguiente paso concreto
 
-Deploy de producción (`npx vercel --prod` con la sesión del CTO) → prueba en iPhone / EAS Simulator →
-H6: iconos con el sprite real (`scripts/iconos.ts`), prueba de actualización del service worker.
-Antes de entregar: gate de UI y Codex sobre `src/`.
+H6: iconos con el sprite real de Clarita (`scripts/iconos.ts`, hoy una "C" provisional) y prueba de
+actualización del service worker en el teléfono. Antes de entregar: gate de UI
+(`web-design-guidelines`, `impeccable audit`) y Codex sobre `src/`.
 
 ## Decisiones tomadas durante la ejecución
 

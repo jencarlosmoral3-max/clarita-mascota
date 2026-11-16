@@ -8,6 +8,7 @@ Vite + TypeScript, canvas 2D vanilla, DOM para la interfaz, vite-plugin-pwa, vit
 ## Comandos
 - `npm run dev` / `npm run build` / `npm run preview`
 - `npm run typecheck` · `npm test` (vitest) · `npm run e2e` (Playwright)
+- Producción en GitHub Pages: se despliega sola al mergear a `main` (`.github/workflows/pages.yml`) en https://jencarlosmoral3-max.github.io/clarita-mascota/ — no renombrar el repo: la partida guardada va atada a esa URL.
 
 ## Estructura de `src/`
 - `main.ts`, `estilos.css`

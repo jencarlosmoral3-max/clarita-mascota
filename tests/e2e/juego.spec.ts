@@ -111,7 +111,8 @@ async function puntoCanvas(page: Page, f: (w: number, h: number) => [number, num
 
 test('tocar a Clarita en el canvas acaricia', async ({ page }) => {
   await abrir(page, diversionBaja);
-  const [x, y] = await puntoCanvas(page, (w, h) => [Math.floor((w - 48) / 2) + 24, Math.floor(h * 0.84) - 45 + 24]);
+  const sprX = Number(await page.locator('canvas[role="img"]').getAttribute('data-x'));
+  const [x, y] = await puntoCanvas(page, new Function(`return (_w, h) => [${sprX} + 24, Math.floor(h * 0.84) - 45 + 24]`)() as (w: number, h: number) => [number, number]);
   await page.mouse.click(x, y);
   expect(await valor(page, 'Diversión')).toBeGreaterThan(20);
 });
@@ -133,6 +134,20 @@ test('la animación corre y los efectos desaparecen', async ({ page }) => {
   await page.getByRole('button', { name: 'Acariciar' }).click();
   await expect.poll(async () => Number(await canvas.getAttribute('data-fx'))).toBeGreaterThan(0);
   await expect.poll(async () => Number(await canvas.getAttribute('data-fx')), { timeout: 4000 }).toBe(0);
+});
+
+test.describe('movimiento reducido', () => {
+  test.use({ reducedMotion: 'reduce' });
+  test('sin reloj: el frame no cambia y el efecto se borra solo', async ({ page }) => {
+    await abrir(page, diversionBaja);
+    const canvas = page.getByRole('img', { name: /Clarita/ });
+    const f0 = await canvas.getAttribute('data-frame');
+    await page.waitForTimeout(1500);
+    expect(await canvas.getAttribute('data-frame')).toBe(f0);
+    await page.getByRole('button', { name: 'Acariciar' }).click();
+    await expect.poll(async () => Number(await canvas.getAttribute('data-fx'))).toBeGreaterThan(0);
+    await expect.poll(async () => Number(await canvas.getAttribute('data-fx')), { timeout: 3000 }).toBe(0);
+  });
 });
 
 for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {

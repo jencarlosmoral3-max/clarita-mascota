@@ -479,4 +479,20 @@ const FXR = {
 export type Efecto = keyof typeof FXR;
 export const FX = Object.fromEntries(Object.entries(FXR).map(([k, v]) => [k, dec(v)])) as Record<Efecto, Grilla>;
 
-export const SEQ: Record<'reposo' | 'triste' | 'dormida', readonly Frame[]> = {"reposo":["idle0","idle0","idle1","idle1","idle0","idle0","idle1","idle1","idle0","blink"],"triste":["sad0","sad0","sad1","sad1"],"dormida":["sleep0","sleep0","sleep0","sleep0","sleep1","sleep1","sleep1","sleep1"]};
+// Cada paso dura t ticks de ANIM_TICK_MS (100 ms); el ciclo se repite.
+export type Paso = { f: Frame; t: number };
+export const SEQ: Record<'reposo' | 'triste' | 'dormida', readonly Paso[]> = {
+  reposo: [{ f: 'idle0', t: 6 }, { f: 'idle1', t: 6 }, { f: 'idle0', t: 6 }, { f: 'idle1', t: 6 }, { f: 'idle0', t: 3 }, { f: 'blink', t: 3 }],
+  triste: [{ f: 'sad0', t: 6 }, { f: 'sad1', t: 6 }],
+  dormida: [{ f: 'sleep0', t: 12 }, { f: 'sleep1', t: 12 }],
+};
+
+export function frameEn(seq: readonly Paso[], tick: number): Frame {
+  const total = seq.reduce((a, p) => a + p.t, 0);
+  let r = total > 0 ? ((tick % total) + total) % total : 0;
+  for (const p of seq) {
+    if (r < p.t) return p.f;
+    r -= p.t;
+  }
+  return seq[0]?.f ?? 'idle0';
+}

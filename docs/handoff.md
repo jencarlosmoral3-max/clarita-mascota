@@ -10,52 +10,50 @@
 |---|---|
 | H0 andamiaje | Cerrado, PR #1 |
 | H1 cascarón PWA | Código cerrado, PR #3. **Deploy pendiente** (ver bloqueos) |
-| H2 bake-off visual | Propuestas publicadas. **Esperando elección del CTO** |
+| H2 bake-off visual | Cerrado |
 | H3 lógica y guardado | Cerrado, PR #2 |
-| H4 render | No iniciado; depende de H2 |
-| H5 UI e integración | No iniciado; depende de H4 |
+| H2 elección | CTO eligió **B** (48×48) el 2026-11-16; mock en `mocks/propuesta-b.html` |
+| H4 render | Cerrado, PR #5 |
+| H5 UI e integración | Cerrado, PR #5. Falta gate de UI (`web-design-guidelines`, `impeccable audit`) |
 | H6 iconos, actualización, entrega | No iniciado |
 
 ## Estado (2026-11-16)
 
-- `main` verificado: `npm run typecheck` limpio, `npm test` 62/62, `npm run e2e` 5/5 (WebKit, perfil
-  iPhone 13: pantalla de instalación en iPhone y iPad, modo instalada, carga sin red, manifest e iconos).
-- La app aún solo muestra "Clarita". La lógica (`src/logica/`) está escrita y testeada pero no
-  conectada a ninguna pantalla.
+- **El juego es jugable en local**: `npm run dev` (en escritorio se juega directo; en iPhone sin
+  instalar muestra la pantalla de instalación). Medidores, 6 acciones, tocar a Clarita, pijama,
+  día/noche, dormitorio al dormir, animación y efectos, guardado local, offline.
+- `main` verificado: `npm run typecheck` limpio, `npm test` 75/75, `npm run e2e` 16/16 (WebKit,
+  perfil iPhone 13).
 - Repo: GitHub privado `jencarlosmoral3-max/clarita-mascota`. `gh` y `git push/fetch` se corren con
   `GH_TOKEN=$(gh auth token -u jencarlosmoral3-max)`; la cuenta activa global de `gh` sigue siendo
   `JoseluisLarrazabal`.
-- Plantilla Game-Studios retirada del proyecto (aprobado con el plan): está entera en
-  `~/respaldo-ccgs-clarita/`. La copia global en `~/.claude` sigue.
-- Fotos de referencia en `fotos de la modelo del juego/` (3 archivos), fuera del repo por `.gitignore`.
+- Plantilla Game-Studios retirada del proyecto: entera en `~/respaldo-ccgs-clarita/`.
+- Fotos de referencia en `fotos de la modelo del juego/`, fuera del repo por `.gitignore`.
+- Fuente "Pixelify Sans" autoalojada (`@fontsource/pixelify-sans`), sin peticiones externas.
 
 ## Bloqueos que necesitan al CTO
 
-1. **Elegir dirección visual** (A, B o híbrido):
-   - A, 32×32, taste-skill: https://claude.ai/artifact/99ge2HiKEgexss3LpzwMt3
-   - B, 48×48, impeccable: https://claude.ai/artifact/Q71ZUXcP2ymWXPmd8kUxTs
-   - Fuentes locales (no versionadas todavía): `scratchpad/bakeoff/propuesta-{a,b}.html` de la
-     sesión del 2026-11-16. Se copian a `mocks/` cuando haya elección.
-   - Opinión del chairman: B. A 32 px el pelo se lee como melena de león y la silueta se pierde.
-     B se parece más, pero le falta: barbita más grande, hocico más angosto, flequillo sobre los ojos.
-2. **Sesión de Vercel para desplegar.** No hay CLI de Vercel instalado y la integración GitHub de la
-   cuenta Vercel (`jencarlosmoral2-1127s-projects`) devuelve 401. Opciones: `npx vercel login` en la
-   terminal, o reconectar GitHub en Vercel e instalar su app en `jencarlosmoral3-max`.
-   El dominio de producción que se asigne es definitivo: cambiarlo tras la entrega borra la partida.
-3. **EAS Simulator**: depende del deploy. `eas` no está instalado; falta comprobar si la cuenta de
-   Expo tiene plan de pago (`eas simulator:availability --json`).
+1. **Deploy a Vercel.** El CTO inició `npx vercel login` el 2026-11-16; falta confirmar que terminó
+   y con qué cuenta. El dominio de producción que se asigne es definitivo: cambiarlo tras la entrega
+   borra la partida.
+2. **EAS Simulator**: depende del deploy. `eas` no está instalado; falta comprobar plan de pago de
+   Expo (`eas simulator:availability --json`).
+3. **Prueba en el iPhone real**: Agregar a inicio, modo avión, notch y barra inferior.
 
 ## Siguiente paso concreto
 
-Con la elección visual: subagente Sonnet implementa H4 (`src/arte/`, `src/escena/render.ts`) con
-la paleta y los sprites ganadores. Con la sesión de Vercel: `npm run build` y deploy de producción,
-luego prueba manual en iPhone (Agregar a inicio, modo avión, notch).
+Deploy de producción (`npx vercel --prod` con la sesión del CTO) → prueba en iPhone / EAS Simulator →
+H6: iconos con el sprite real (`scripts/iconos.ts`), prueba de actualización del service worker.
+Antes de entregar: gate de UI y Codex sobre `src/`.
 
 ## Decisiones tomadas durante la ejecución
 
 - `guardado.cargar`: si la lectura del almacenamiento lanza, se arranca en solo lectura para no
   pisar una partida real (hallazgo de `/code-review`; el brief original pedía lo contrario).
 - La pantalla de instalación también se muestra en iPad.
+- Tocar el canvas solo acaricia si el toque cae sobre el sprite.
+- Escala del canvas: entera en píxeles de dispositivo, mínimo 96 píxeles lógicos de ancho (12 en iPhone 13).
+- Hallazgo de revisión en PR #5: la animación no arrancaba y los e2e no lo cubrían; ahora hay test.
 - Acariciar: sube diversión 10 y da cariño solo si diversión estaba bajo 70; sin relojes.
 - Valores iniciales: medidores en 80, cariño en 50. Frases de ánimo en `src/logica/animo.ts`.
 - TypeScript 7 (compilador nativo) y Vite 8: lo que resolvió `latest`; typecheck y build pasan.
@@ -64,7 +62,9 @@ luego prueba manual en iPhone (Agregar a inicio, modo avión, notch).
 
 - Nada en iPhone real ni en Safari de iOS. Playwright WebKit en Linux no lo sustituye.
 - Actualización del service worker en la app instalada.
-- Codex (regla 13): no se corrió en ninguno de los 3 PR. Pendiente de pasar sobre `src/logica/` y `src/pwa.ts`.
+- `prefers-reduced-motion`, escena de alto 0 y dormir con efectos activos: sin test, revisados por lectura.
+- Contraste y foco: revisados a ojo, no medidos.
+- Codex (regla 13): no se corrió en ningún PR. Pendiente de pasar sobre `src/logica/` y `src/pwa.ts`.
 - `/ponytail-review` como skill solo corrió en H0; en H1 y H3 la revisión del diff fue manual.
 - Balance con uso real.
 

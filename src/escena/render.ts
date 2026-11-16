@@ -96,10 +96,15 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
       sc.width = 48;
       sc.height = 48;
       const sctx = sc.getContext('2d');
-      if (sctx) blit(sctx, SP[frame], pal.p, 0, 0);
-      sprites.set(ck, sc);
+      if (sctx) {
+        blit(sctx, SP[frame], pal.p, 0, 0);
+        sprites.set(ck, sc);
+      } else {
+        sc = undefined;
+      }
     }
-    loCtx.drawImage(sc, sprX, sy);
+    if (sc) loCtx.drawImage(sc, sprX, sy);
+    else blit(loCtx, SP[frame], pal.p, sprX, sy);
     for (const f of fx) blit(loCtx, FX[f.k], FXP, Math.round(f.x), Math.round(f.y));
     if (an === 'dormida') {
       const p = Math.floor(t / (2 * K)) % 3;
@@ -193,7 +198,10 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
   document.addEventListener('visibilitychange', () => {
     if (reducir.matches) return;
     if (document.hidden) pararReloj();
-    else arrancarReloj();
+    else {
+      arrancarReloj();
+      dibujar();
+    }
   });
   arrancar();
   new ResizeObserver(layout).observe(escena);

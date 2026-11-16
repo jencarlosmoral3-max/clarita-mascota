@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dev-dist/
+test-results/
+playwright-report/
+.vercel/
+.env*
+.env.eas-simulator
+fotos de la modelo del juego/

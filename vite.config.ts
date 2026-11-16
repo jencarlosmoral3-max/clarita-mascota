@@ -13,7 +13,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
-        globPatterns: ['**/*.{html,js,css,png,svg,webmanifest}'],
+        globPatterns: ['**/*.{html,js,css,png,svg,webmanifest,woff2}'],
       },
       manifest: {
         name: 'Clarita',

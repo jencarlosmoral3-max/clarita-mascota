@@ -21,7 +21,8 @@ test('instalada: muestra Clarita', async ({ page }) => {
   // WebKit de Playwright no puede emular display-mode: standalone; navigator.standalone sí.
   await page.addInitScript(() => Object.defineProperty(navigator, 'standalone', { value: true }));
   await page.goto('/');
-  await expect(page.locator('#app').getByText('Clarita')).toBeVisible();
+  await expect(page.locator('#app').getByRole('heading', { name: 'Clarita' })).toBeVisible();
+  await expect(page.locator('#app canvas[role="img"]')).toBeVisible();
   await expect(page.locator('#instalar')).toBeHidden();
   expect(errores).toEqual([]);
 });

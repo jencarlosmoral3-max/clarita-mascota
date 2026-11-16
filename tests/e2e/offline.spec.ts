@@ -10,5 +10,6 @@ test('instalada: funciona sin red tras la primera carga', async ({ page, context
 
   await context.setOffline(true);
   await page.reload();
-  await expect(page.locator('#app').getByText('Clarita')).toBeVisible();
+  await expect(page.locator('#app').getByRole('heading', { name: 'Clarita' })).toBeVisible();
+  await expect(page.locator('#app canvas[role="img"]')).toBeVisible();
 });

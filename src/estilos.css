@@ -20,13 +20,13 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-#app, #instalar {
+#instalar {
   box-sizing: border-box;
   height: 100%;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
-#app { display: grid; place-items: center; font-size: 2rem; }
+#app { height: 100%; }
 
 #instalar { padding-inline: calc(24px + env(safe-area-inset-left)) calc(24px + env(safe-area-inset-right)); overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 16px; }
 #instalar[hidden], #app[hidden] { display: none; }
@@ -36,3 +36,53 @@ body {
 
 button { touch-action: manipulation; min-height: 44px; }
 canvas { touch-action: none; }
+
+/* ---------- Juego (pantalla del mock B) ---------- */
+.juego {
+  --g-bg: #dfe7f1; --g-panel: #f5f8fc; --g-ink: #1c1a28; --g-ink2: #454a60; --g-track: #c5d0df;
+  --g-face: #ffffff; --g-edge: #1c1a28; --g-accent: #c3135f; --g-on-accent: #ffffff;
+  --pixel: 'Pixelify Sans', ui-monospace, system-ui, sans-serif;
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--g-bg);
+  color: var(--g-ink);
+  font: 500 14px/1.4 system-ui, -apple-system, sans-serif;
+}
+.juego[data-hora='noche'] {
+  --g-bg: #131a33; --g-panel: #1b2447; --g-ink: #eef1fc; --g-ink2: #b8c0dd; --g-track: #2c3766;
+  --g-face: #27336a; --g-edge: #06091a; --g-accent: #f26aa8; --g-on-accent: #131a33;
+}
+.cabecera { flex: none; display: grid; gap: 4px; padding: calc(8px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) 10px calc(20px + env(safe-area-inset-left)); }
+.fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cabecera h1 { margin: 0; font: 700 30px/1 var(--pixel); }
+.chip { font: 700 13px var(--pixel); border: 2px solid var(--g-edge); background: var(--g-face); padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.frase { margin: 0; color: var(--g-ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.escena { flex: 1 1 0; min-height: 0; position: relative; overflow: hidden; background: #0f4fc4; }
+.juego[data-hora='noche'] .escena { background: #080c2b; }
+.escena canvas { position: absolute; image-rendering: pixelated; }
+.panel {
+  flex: none; display: grid; gap: 12px; background: var(--g-panel); border-top: 3px solid var(--g-edge);
+  padding: 12px calc(16px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+}
+.medidores { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.medidor { display: grid; grid-template-columns: 16px 76px 1fr 44px; align-items: center; gap: 8px; font-weight: 700; }
+.medidor canvas { width: 16px; height: 16px; image-rendering: pixelated; }
+.celdas { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; border: 2px solid var(--g-edge); padding: 2px; background: var(--g-track); height: 16px; }
+.celdas i { display: block; }
+.celdas i.on { background: var(--c); }
+.valor { text-align: right; font: 700 14px var(--pixel); font-variant-numeric: tabular-nums; }
+.valor.bajo { color: var(--g-accent); }
+.botones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.btn {
+  font: 700 14px var(--pixel); color: var(--g-ink); background: var(--g-face); border: 2px solid var(--g-edge); border-radius: 8px;
+  min-height: 56px; padding: 6px 4px 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  box-shadow: 0 3px 0 var(--g-edge); cursor: pointer;
+}
+.btn canvas { width: 24px; height: 24px; image-rendering: pixelated; }
+.btn:active:not(:disabled) { transform: translateY(3px); box-shadow: none; }
+.btn[aria-pressed='true'] { background: var(--g-accent); color: var(--g-on-accent); }
+.btn:disabled { opacity: 0.45; box-shadow: none; transform: translateY(3px); cursor: not-allowed; border-style: dashed; }
+.btn:focus-visible, canvas:focus-visible { outline: 3px solid var(--g-accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

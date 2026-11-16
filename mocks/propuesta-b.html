@@ -1,0 +1,327 @@
+<title>Clarita, Propuesta B</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&family=Pixelify+Sans:wght@500;700&display=swap">
+<style>
+/* Concepto: la pantalla de juego es la laguna misma; el marco y los controles del mock quedan en azul pizarra frío (frazada), con fucsia solo como firma de Clarita. */
+:root{
+  --bg:#eceff5; --surface:#ffffff; --fg:#191b29; --muted:#4b5068; --line:#c9cfdd;
+  --accent:#b0105a; --accent-ink:#ffffff; --chip:#dfe4ef;
+  --font-body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-pixel:"Pixelify Sans","Nunito",ui-monospace,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10121b; --surface:#1a1d2b; --fg:#e8eaf5; --muted:#a9afc7; --line:#32374d;
+  --accent:#f26aa8; --accent-ink:#1a0a12; --chip:#262b40; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10121b; --surface:#1a1d2b; --fg:#e8eaf5; --muted:#a9afc7; --line:#32374d;
+  --accent:#f26aa8; --accent-ink:#1a0a12; --chip:#262b40; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:500 16px/1.5 var(--font-body);
+  padding-block:24px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1040px;margin:0 auto;display:grid;gap:32px}
+h1,h2{font-family:var(--font-pixel);font-weight:700;margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(26px,6vw,38px)} h2{font-size:22px}
+p{margin:0}
+.intro{display:grid;gap:8px;max-width:62ch}
+.intro p{color:var(--muted)}
+.stage{display:grid;gap:24px;grid-template-columns:minmax(0,1fr);align-items:start}
+@media(min-width:900px){.stage{grid-template-columns:300px minmax(0,1fr);gap:48px}.controls{position:sticky;top:16px}.stage .phone-col{justify-self:center}}
+.controls{display:grid;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.controls h2{font-size:18px}
+fieldset{border:0;padding:0;margin:0;min-width:0}
+legend{font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0;margin-bottom:6px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg label{position:relative;flex:1 1 0;min-width:0}
+.seg input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.seg span{display:flex;align-items:center;justify-content:center;min-height:44px;padding:6px 10px;border-radius:10px;background:var(--chip);color:var(--fg);font-weight:700;text-align:center;border:2px solid transparent}
+.seg input:checked+span{background:var(--accent);color:var(--accent-ink)}
+.seg input:focus-visible+span{outline:3px solid var(--fg);outline-offset:2px}
+.hint{font-size:14px;color:var(--muted)}
+.phone-col{width:min(390px,100%);min-width:0}
+/* ---------- Teléfono ---------- */
+.phone{width:100%;height:844px;border-radius:52px;background:#0c0b11;padding:11px;box-shadow:0 0 0 2px #2a2933,0 24px 48px -16px rgba(5,5,15,.5)}
+.screen{--g-bg:#dfe7f1;--g-panel:#f5f8fc;--g-ink:#1c1a28;--g-ink2:#454a60;--g-track:#c5d0df;--g-face:#ffffff;--g-edge:#1c1a28;--g-accent:#c3135f;
+  height:100%;border-radius:42px;overflow:hidden;display:flex;flex-direction:column;background:var(--g-bg);color:var(--g-ink);position:relative}
+.screen[data-hora="noche"]{--g-bg:#131a33;--g-panel:#1b2447;--g-ink:#eef1fc;--g-ink2:#b8c0dd;--g-track:#2c3766;--g-face:#27336a;--g-edge:#06091a;--g-accent:#f26aa8}
+.island{position:absolute;top:10px;left:50%;width:104px;height:30px;margin-left:-52px;border-radius:20px;background:#0c0b11;z-index:3}
+.status{display:flex;justify-content:space-between;align-items:center;padding:14px 30px 0;height:48px;font:700 15px var(--font-body);flex:none}
+.top{display:grid;gap:4px;padding:2px 20px 10px;flex:none}.top .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.top h3{font:700 30px/1 var(--font-pixel);margin:0}
+.top .mood{font-size:14px;color:var(--g-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{font:700 13px var(--font-pixel);border:2px solid var(--g-edge);background:var(--g-face);padding:3px 8px;border-radius:6px;white-space:nowrap}
+.scene{flex:1 1 0;min-height:0;position:relative;margin:0 0 0;background:#0f4fc4}
+.scene canvas{position:absolute;top:0;image-rendering:pixelated;image-rendering:crisp-edges;image-rendering:pixelated}
+.panel{flex:none;background:var(--g-panel);border-top:3px solid var(--g-edge);padding:12px 16px 8px;display:grid;gap:12px}
+.meters{display:grid;gap:5px;margin:0;padding:0;list-style:none}
+.meter{display:grid;grid-template-columns:18px 76px 1fr 40px;align-items:center;gap:8px;font-size:14px;font-weight:700}
+.meter canvas{image-rendering:pixelated;width:18px;height:18px}
+.cells{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;border:2px solid var(--g-edge);padding:2px;background:var(--g-track);height:16px}
+.cells i{background:transparent;display:block}
+.cells i.on{background:var(--c)}
+.val{text-align:right;font:700 14px var(--font-pixel);font-variant-numeric:tabular-nums}
+.val.low{color:var(--g-accent)}
+.btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.btn{font:700 14px var(--font-pixel);color:var(--g-ink);background:var(--g-face);border:2px solid var(--g-edge);border-radius:8px;min-height:56px;padding:6px 4px 5px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;box-shadow:0 3px 0 var(--g-edge);transition:transform .08s,box-shadow .08s}
+.btn canvas{image-rendering:pixelated;width:24px;height:24px}
+.btn:hover{background:var(--g-track)}
+.btn:active{transform:translateY(3px);box-shadow:0 0 0 var(--g-edge)}
+.btn[aria-pressed="true"]{background:var(--g-accent);color:#fff}
+.btn[aria-pressed="true"] canvas{filter:brightness(0) invert(1)}
+.btn:focus-visible{outline:3px solid var(--g-accent);outline-offset:2px}
+.home{height:5px;width:128px;border-radius:3px;background:var(--g-ink);opacity:.8;margin:2px auto 6px;flex:none}
+/* ---------- Lámina ---------- */
+.sheet{display:grid;gap:20px}
+.sprites{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:8px;justify-items:center;min-width:0}
+.card canvas{max-width:100%;height:auto;image-rendering:pixelated;border-radius:6px}
+.card b{font-family:var(--font-pixel);font-size:16px;justify-self:start}
+.card small{color:var(--muted);justify-self:start;font-size:13px}
+.pal{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));margin:0;padding:0;list-style:none}
+.pal li{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 10px;min-width:0;font-size:14px}
+.sw{flex:none;width:28px;height:28px;border-radius:4px;border:1px solid var(--line);background-image:linear-gradient(45deg,#ccc 25%,transparent 25% 75%,#ccc 75%),linear-gradient(45deg,#ccc 25%,transparent 25% 75%,#ccc 75%);background-size:8px 8px;background-position:0 0,4px 4px;position:relative}
+.sw::after{content:"";position:absolute;inset:0;background:var(--c)}
+.pal code{font:700 13px ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.pal .n{min-width:0;display:grid}
+.pal .n span{color:var(--muted);font-size:12px}
+.notes{color:var(--muted);font-size:15px;max-width:70ch}
+.notes li{margin-block:4px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="intro">
+    <h1>Clarita, propuesta B</h1>
+    <p>Sprite de 48 × 48 píxeles, paleta tomada de la laguna, el dormitorio y el pijama fucsia. Cambia el estado, el pijama y la hora con los controles; los botones del teléfono reaccionan con una animación corta.</p>
+  </header>
+
+  <section class="stage" aria-label="Maqueta del juego">
+    <form class="controls" id="mock-controls" onsubmit="return false">
+      <h2>Controles del mock</h2>
+      <fieldset><legend>Estado</legend><div class="seg">
+        <label><input type="radio" name="est" value="reposo" checked><span>Reposo</span></label>
+        <label><input type="radio" name="est" value="triste"><span>Triste</span></label>
+        <label><input type="radio" name="est" value="dormida"><span>Dormida</span></label></div></fieldset>
+      <fieldset><legend>Pijama</legend><div class="seg">
+        <label><input type="radio" name="pj" value="0" checked><span>Sin</span></label>
+        <label><input type="radio" name="pj" value="1"><span>Con</span></label></div></fieldset>
+      <fieldset><legend>Hora</legend><div class="seg">
+        <label><input type="radio" name="hora" value="dia" checked><span>Día</span></label>
+        <label><input type="radio" name="hora" value="noche"><span>Noche</span></label></div></fieldset>
+      <fieldset><legend>Lugar</legend><div class="seg">
+        <label><input type="radio" name="lugar" value="laguna" checked><span>Laguna</span></label>
+        <label><input type="radio" name="lugar" value="dormitorio"><span>Dormitorio</span></label></div></fieldset>
+      <p class="hint">Noche cambia solo la paleta del fondo. Pijama cambia solo la paleta de los píxeles de ropa. El sprite es uno solo.</p>
+    </form>
+
+    <div class="phone-col">
+      <div class="phone" role="group" aria-label="Pantalla del juego">
+        <div class="screen" id="screen" data-hora="dia">
+          <div class="island" aria-hidden="true"></div>
+          <div class="status" aria-hidden="true"><span id="clock">7:05</span><span>5G</span></div>
+          <div class="top">
+            <div class="row"><h3>Clarita</h3><span class="chip" id="chip">Laguna · Día</span></div>
+            <p class="mood" id="mood" aria-live="polite">Tranquila, mirando la laguna.</p>
+          </div>
+          <div class="scene" id="scene"><canvas id="cv" role="img" aria-label="Clarita, una perrita pequeña de pelo rizado chocolate con barbita blanca"></canvas></div>
+          <div class="panel">
+            <ul class="meters" id="meters"></ul>
+            <div class="btns" id="btns">
+              <button class="btn" type="button" data-act="comida"><canvas width="8" height="8" data-ico="bone" aria-hidden="true"></canvas>Alimentar</button>
+              <button class="btn" type="button" data-act="jugar"><canvas width="8" height="8" data-ico="ball" aria-hidden="true"></canvas>Jugar</button>
+              <button class="btn" type="button" data-act="bano"><canvas width="8" height="8" data-ico="drop" aria-hidden="true"></canvas>Bañar</button>
+              <button class="btn" type="button" data-act="dormir" aria-pressed="false"><canvas width="8" height="8" data-ico="moon" aria-hidden="true"></canvas>Dormir</button>
+              <button class="btn" type="button" data-act="cariño"><canvas width="8" height="8" data-ico="heart" aria-hidden="true"></canvas>Acariciar</button>
+              <button class="btn" type="button" data-act="pijama" aria-pressed="false"><canvas width="8" height="8" data-ico="shirt" aria-hidden="true"></canvas>Pijama</button>
+            </div>
+          </div>
+          <div class="home" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet" aria-labelledby="t-lamina">
+    <h2 id="t-lamina">Lámina de sprites</h2>
+    <p class="notes">Cada cuadrado de la cuadrícula es un píxel lógico. Los sprites son grillas de 48 × 48 índices a una paleta de 23 entradas, dibujadas con escala entera.</p>
+    <div class="sprites" id="sprites"></div>
+    <h2>Paleta de Clarita</h2>
+    <ul class="pal" id="pal"></ul>
+    <h2>Fondos</h2>
+    <div class="sprites" id="bgs"></div>
+    <ul class="notes">
+      <li>Pijama: los índices 15 a 18 y 21 son ropa. Sin pijama se leen como pelo (15 y 17 como pelo medio, 16 como pelo oscuro, 18 como pelo claro, 21 como contorno).</li>
+      <li>Noche: cada fondo tiene una segunda paleta; la grilla es la misma. Las estrellas y la luna existen en la grilla y de día toman el color del cielo.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const SPR={"idle0":["000000000000000000000000000000000000000000000000","000000000000000000000000110000000000000000000000","000000000000000000001111441111100000000000000000","000000000000000000014444331444410000000000000000","000000000000000001113333331333311000000000000000","000000000000000114413444333313344110000000000000","000000000000001443233424333333333441000000000000","000000000000001333333432333444233321000000000000","000000000000011333333334443424333311100000000000","000000000000144224444444242422222224410000000000","000000000001232224244244222222222223310000000000","000000000011332224224222222224442223311000000000","000000011131332234442444323324243233313111000000","000000133313322235553424323235553233331233100000","000001333333344434333433332444344433333333310000","000013334323342439994433333429992433333333331000","00001342233334339aab942333349aab9333333343331000","00001343443333329aaa933333339aaa9333333443331000","000123323333323399a99433333399a99333332434433100","00013332343333445999245cdc6339995333333432443100","0001343333333346435555cdccc555533633324333323100","00013434334333434555555ccc5555553333332343343100","000134423233333545656556555556553533433333333100","000133334333413256655515561555555431343333333100","000134333333311365565551116556556411443343333100","000013544354100123353377787445343100165533651000","000015563255100011333777877743311000153533561000","00001336343310000011f7877777f1100000123653261000","0000016533610000llfi877887778ffll000015452610000","000000143510000liffff8777778fffffl00001352100000","000000011100000lfffiff87778ffffffl00000111000000","000000000000000lfffiffff7ffffffffl00000010010000","000000000000000liiffiffffffffffffl00000141161000","00000000000000liijjjiffffffffjjjffl0001133333100","000000000000lllffkkjjfffffhfjjkkfflll14333336610","00000000000lfffhhfhkjjjffhjjjkfffffff13333334331","0000000000lgfffhhhhhkkjjfjjkkffhhffffg3433333331","0000000000lgffhfffhfffkkkjkffffhhfhffg3333323461","000000000lggghhhfffffffkjkfffffffhhhggg332333331","000000000lgggghgf3fffffjjkfffffffghgggg333332331","000000000lgghgggffffhfhjjkffffhffgggggg443233610","000000000lghhhggfffhhhhhfffffhhhfgggggg144343100","000000000lgghgggg33333ggggg33333ggghhggl11111000","0000000000lggggg3343333ggg3343333gghhgl000000000","0000000000lggggg3633633ggg3633633gggggl000000000","00000000000lgggm3232323ggg3232323mgggl0000000000","00000000mmmmmmmmm33333mmmmm33333mmmmmmmmm0000000","000000000000mmmmmmmmmmmmmmmmmmmmmmmmm00000000000"],"idle1":["000000000000000000000000000000000000000000000000","000000000000000000000000000000000000000000000000","000000000000000000000000110000000000000000000000","000000000000000000001111441111100000000000000000","000000000000000000014444331444410000000000000000","000000000000000001113333331333311000000000000000","000000000000000114413444333313344110000000000000","000000000000001443233424333333333441000000000000","000000000000001333333432333444233321000000000000","000000000000011333333334443424333311100000000000","000000000000144224444444242422222224410000000000","000000000001232224244244222222222223310000000000","000000000011332224224222222224442223311000000000","000000011131332234442444323324243233313111000000","000000133313322235553424323235553233331233100000","000001333333344434333433332444344433333333310000","000013334323342439994433333429992433333333331000","00001342233334339aab942333349aab9333333343331000","00001343443333329aaa933333339aaa9333333443331000","000123323333323399a99433333399a99333332434433100","00013332343333445999245cdc6339995333333432443100","0001343333333346435555cdccc555533633324333323100","00013434334333434555555ccc5555553333332343343100","000134423233333545656556555556553533433333333100","000133334333413256655515561555555431343333333100","000134333333311365565551116556556411443343333100","000013544354100123353377787445343100165533651000","000015563255100011333777877743311000153533561000","0000133634331000llfif7877777fffll000123653261000","000001653361000lifff877887778ffffl00015452610000","000000143510000lfffif8777778fffffl00001352100000","000000011100000lfffiff87778ffffffl00000111010000","000000000000000liiffifff7ffffffffl00000141161000","00000000000000liijjjiffffffffjjjffl0001133333100","000000000000lllffkkjjfffffhfjjkkfflll14333336610","00000000000lfffhhfhkjjjffhjjjkfffffff13333334331","0000000000lgfffhhhhhkkjjfjjkkffhhffffg3433333331","0000000000lgffhfffhfffkkkjkffffhhfhffg3333323461","000000000lggghhhfffffffkjkfffffffhhhggg332333331","000000000lgggghgfffffffjjkfffffffghgggg333332331","000000000lgghgggf3ffhfhjjkffffhffgggggg443233610","000000000lghhhggfffhhhhhfffffhhhfgggggg144343100","000000000lgghgggg33333ggggg33333ggghhggl11111000","0000000000lggggg3343333ggg3343333gghhgl000000000","0000000000lggggg3633633ggg3633633gggggl000000000","00000000000lgggm3232323ggg3232323mgggl0000000000","00000000mmmmmmmmm33333mmmmm33333mmmmmmmmm0000000","000000000000mmmmmmmmmmmmmmmmmmmmmmmmm00000000000"],"blink":["000000000000000000000000000000000000000000000000","000000000000000000000000110000000000000000000000","000000000000000000001111441111100000000000000000","000000000000000000014444331444410000000000000000","000000000000000001113333331333311000000000000000","000000000000000114413444333313344110000000000000","000000000000001443233424333333333441000000000000","000000000000001333333432333444233321000000000000","000000000000011333333334443424333311100000000000","000000000000144224444444242422222224410000000000","000000000001232224244244222222222223310000000000","000000000011332224224222222224442223311000000000","000000011131332234442444323324243233313111000000","000000133313322235553424323235553233331233100000","000001333333344434333433332444344433333333310000","000013334323342433344433333424342433333333331000","000013422333343333342423333433343333333343331000","000013434433333213241333333313331333333443331000","000123323333323331114433333331113333332434433100","00013332343333445334245cdc6333235333333432443100","0001343333333346435555cdccc555533633324333323100","00013434334333434555555ccc5555553333332343343100","000134423233333545656556555556553533433333333100","000133334333413256655515561555555431343333333100","000134333333311365565551116556556411443343333100","000013544354100123353377787445343100165533651000","000015563255100011333777877743311000153533561000","00001336343310000011f7877777f1100000123653261000","0000016533610000llfi877887778ffll000015452610000","000000143510000liffff8777778fffffl00001352100000","000000011100000lfffiff87778ffffffl00000111000000","000000000000000lfffiffff7ffffffffl00000010010000","000000000000000liiffiffffffffffffl00000141161000","00000000000000liijjjiffffffffjjjffl0001133333100","000000000000lllffkkjjfffffhfjjkkfflll14333336610","00000000000lfffhhfhkjjjffhjjjkfffffff13333334331","0000000000lgfffhhhhhkkjjfjjkkffhhffffg3433333331","0000000000lgffhfffhfffkkkjkffffhhfhffg3333323461","000000000lggghhhfffffffkjkfffffffhhhggg332333331","000000000lgggghgf3fffffjjkfffffffghgggg333332331","000000000lgghgggffffhfhjjkffffhffgggggg443233610","000000000lghhhggfffhhhhhfffffhhhfgggggg144343100","000000000lgghgggg33333ggggg33333ggghhggl11111000","0000000000lggggg3343333ggg3343333gghhgl000000000","0000000000lggggg3633633ggg3633633gggggl000000000","00000000000lgggm3232323ggg3232323mgggl0000000000","00000000mmmmmmmmm33333mmmmm33333mmmmmmmmm0000000","000000000000mmmmmmmmmmmmmmmmmmmmmmmmm00000000000"],"sad0":["000000000000000000000000000000000000000000000000","000000000000000000000000000000000000000000000000","000000000000000000000000110000000000000000000000","000000000000000000001111441111100000000000000000","000000000000000000014444331444410000000000000000","000000000000000001113333331333311000000000000000","000000000000000114413444333313344110000000000000","000000000000001443233424333333333441000000000000","000000000000001333333432333444233321000000000000","000000000000011333333334443424333311100000000000","000000000000144224444444242422222224410000000000","000000000001232224244244222222222223310000000000","000000000011332224254222222225442223311000000000","000000000131332235542444323324553233313100000000","000000000113322254243424323234335233331000000000","000000011313344434333433332444344433331111000000","000000133313342439994433333429992433331333100000","00000133343334339aab942333349aab9333333333310000","00001333433333329baa933333339baa9333333333331000","000013422333323399a99433333399a99333333343331000","00001343443333445999245cdc6339995333334443331000","0001233233323346e35555cdccc555533633342434433100","0001333234443343e555555ccc5555553333343432443100","0001343333333335e5656556555556553533224333323100","000134343343313256655551115555555431432343343100","000134423233311365565515551556556411433333333100","000133334333410123353377787445343101343333333100","000134333333310011333777877743311001443343333100","0000135443541000llfff7877777fffll000165533651000","000015563255100lfffi877887778ffffl00153533561000","000013363433100lfiiff8777778fffffl00123653261000","000001653361000liffiff87778ffffffl00015452610000","000000143510000lfiiififf7ffffffffl00001352100000","00000001110000liijjjiifffffffjjjffl0000111000000","000000000000lllffkkjjfffffhfjjkkfflll00000000000","00000000000lfffhhfhkjjjffhjjjkfffffffl0010010000","0000000000lgfffhhhhhkkjjfjjkkffhhffffgl141161000","0000000000lgffhfffhfffkkkjkffffhhfhffgl133333100","000000000lggghhhfffffffkjkfffffffhhhggg333333610","000000000lgggghgfffffffjjkfffffffghgggg333333331","000000000lgghgggf3ffhfhjjkffffhffgggggg433333331","000000000lghhhggfffhhhhhfffffhhhfgggggg333323461","000000000lgghgggg33333ggggg33333ggghhgg332333331","0000000000lggggg3343333ggg3343333gghhg3334332331","0000000000lggggg3633633ggg3633633ggggg1443233610","00000000000lgggm3232323ggg3232323mgggl0144343100","00000000mmmmmmmmm33333mmmmm33333mmmmmmmmm1111000","000000000000mmmmmmmmmmmmmmmmmmmmmmmmm00000000000"],"sad1":["000000000000000000000000000000000000000000000000","000000000000000000000000000000000000000000000000","000000000000000000000000000000000000000000000000","000000000000000000000000110000000000000000000000","000000000000000000001111441111100000000000000000","000000000000000000014444331444410000000000000000","000000000000000001113333331333311000000000000000","000000000000000114413444333313344110000000000000","000000000000001443233424333333333441000000000000","000000000000001333333432333444233321000000000000","000000000000011333333334443424333311100000000000","000000000000144224444444242422222224410000000000","000000000001232224244244222222222223310000000000","000000000011332224254222222225442223311000000000","000000000131332235542444323324553233313100000000","000000000113322254243424323234335233331000000000","000000001313344434333433332444344433331100000000","000000011113342439994433333429992433331311000000","00000013331334339aab942333349aab9333331233100000","00000133343333329baa933333339baa9333333333310000","000013334323323399a99433333399a99333333333331000","00001342233333445999245cdc6339995333333343331000","0000134344323346e35555cdccc555533633344443331000","0001233233323343e555555ccc5555553333342434433100","0001333234443335e5656556555556553533243432443100","000134333333313256655551115555555431224333323100","000134343343311365565515551556556411432343343100","000134423233310123353377787445343101433333333100","000133334333410011333777877743311001343333333100","000134333333310lfffii7877777fffffl01443343333100","000013544354100lfiif877887778ffffl00165533651000","000015563255100liffif8777778fffffl00153533561000","000013363433100lfiiifi87778ffffffl00123653261000","00000165336100liijjjiiff7ffffjjjffl0015452610000","000000143510lllffkkjjfffffhfjjkkfflll01352100000","00000001110lfffhhfhkjjjffhjjjkfffffffl0111010000","0000000000lgfffhhhhhkkjjfjjkkffhhffffgl141161000","0000000000lgffhfffhfffkkkjkffffhhfhffgl133333100","000000000lggghhhfffffffkjkfffffffhhhggg333333610","000000000lgggghgfffffffjjkfffffffghgggg333333331","000000000lgghgggffffhfhjjkffffhffgggggg433333331","000000000lghhhggf3fhhhhhfffffhhhfgggggg333323461","000000000lgghgggg33333ggggg33333ggghhgg332333331","0000000000lggggg3343333ggg3343333gghhg3334332331","0000000000lggggg3633633ggg3633633ggggg1443233610","00000000000lgggm3232323ggg3232323mgggl0144343100","00000000mmmmmmmmm33333mmmmm33333mmmmmmmmm1111000","000000000000mmmmmmmmmmmmmmmmmmmmmmmmm00000000000"],"sleep0":["000000000000000000000000000000000000000000000000","000000000000000000000000000000000000000000000000","000000000000000000000000000000000000000000000000","000000000000000000000000110000000000000000000000","000000000000000000001111441111100000000000000000","000000000000000000014444331444410000000000000000","000000000000000001113333331333311000000000000000","000000000000000114413444333313344110000000000000","000000000000001443233424333333333441000000000000","000000000000001333333432333444233321000000000000","000000000000011333333334443424333311100000000000","000000000000144224444444242422222224410000000000","000000000001232224244244222222222223310000000000","000000000011332224224222222224442223311000000000","000000000131332234442444323324243233313100000000","000000000113322235553424323235553233331000000000","000000011313344434333433332444344433331111000000","000000133313342433344433333424342433331333100000","000001333433343333342423333433343333333333310000","000013334333333213241333333313331333333333331000","000013422333323331114433333331113333333343331000","00001343443333445334245cdc6333235333334443331000","0001233233323346435555cdccc555533633342434433100","00013332344433434555555ccc5555553333343432443100","000134333333333545656556555556553533224333323100","000134343343313256655555565555555431432343343100","000134423233311365565551116556556411433333333100","000133334333410123353377787445343101343333333100","000134333333310011333777877743311001443343333100","000013544354100liffff7877777fffffl00165533651000","000015563255100lfffi877887778ffffl00153533561000","000013363433100lfffif8777778fffffl00123653261000","000001653361000liiffif87778ffffffl00015452610000","00000014351000liijjjifff7ffffjjjffl0001352100000","000000011100lllffkkjjfffffhfjjkkfflll00111010000","00000000000lfffhhfhkjjjffhjjjkfffffffl0141161000","0000000000lgfffhhhhhkkjjfjjkkffhhffffg1133333100","0000000000lgffhfffhfffkkkjkffffhhfhffg4333336610","000000000lggghhhfffffffkjkfffffffhhhggg333333331","000000000lgggghgfffffffjjkfffffffghgggg433333331","000000000lgghgggffffhfhjjkffffhffgggggg333323461","000000000lghhhggf3fhhhhhfffffhhhfgggggg332333331","000000000lgghgggg33333ggggg33333ggghhgg333332331","0000000000lggggg3343333ggg3343333gghhg1443233610","0000000000lggggg3633633ggg3633633gggggl144343100","00000000000lgggm3232323ggg3232323mgggl0011111000","00000000mmmmmmmmm33333mmmmm33333mmmmmmmmm0000000","000000000000mmmmmmmmmmmmmmmmmmmmmmmmm00000000000"],"sleep1":["000000000000000000000000000000000000000000000000","000000000000000000000000000000000000000000000000","000000000000000000000000000000000000000000000000","000000000000000000000000000000000000000000000000","000000000000000000000000110000000000000000000000","000000000000000000001111441111100000000000000000","000000000000000000014444331444410000000000000000","000000000000000001113333331333311000000000000000","000000000000000114413444333313344110000000000000","000000000000001443233424333333333441000000000000","000000000000001333333432333444233321000000000000","000000000000011333333334443424333311100000000000","000000000000144224444444242422222224410000000000","000000000001232224244244222222222223310000000000","000000000011332224224222222224442223311000000000","000000000131332234442444323324243233313100000000","000000000113322235553424323235553233331000000000","000000011313344434333433332444344433331111000000","000000133313342433344433333424342433331333100000","000001333433343333342423333433343333333333310000","000013334333333213241333333313331333333333331000","000013422333323331114433333331113333333343331000","00001343443333445334245cdc6333235333334443331000","0001233233323346435555cdccc555533633342434433100","00013332344433434555555ccc5555553333343432443100","000134333333333545656556555556553533224333323100","000134343343313256655555565555555431432343343100","000134423233311365565551116556556411433333333100","000133334333410123353377787445343101343333333100","000134333333310lif3337778777433ffl01443343333100","000013544354100lfffif7877777fffffl00165533651000","000015563255100lfffi877887778ffffl00153533561000","000013363433100liiffi8777778fffffl00123653261000","00000165336100liijjjif87778ffjjjffl0015452610000","000000143510lllffkkjjfff7fhfjjkkfflll01352110000","00000001110lfffhhfhkjjjffhjjjkfffffffl0141161000","0000000000lgfffhhhhhkkjjfjjkkffhhffffg1133333100","0000000000lgffhfffhfffkkkjkffffhhfhffg4333336610","000000000lggghhhfffffffkjkfffffffhhhggg333333331","000000000lgggghgfffffffjjkfffffffghgggg433333331","000000000lgghgggffffhfhjjkffffhffgggggg333323461","000000000lghhhggfffhhhhhfffffhhhfgggggg332333331","000000000lgghgggg33333ggggg33333ggghhgg333332331","0000000000lggggg3343333ggg3343333gghhg1443233610","0000000000lggggg3633633ggg3633633gggggl144343100","00000000000lgggm3232323ggg3232323mgggl0011111000","00000000mmmmmmmmm33333mmmmm33333mmmmmmmmm0000000","000000000000mmmmmmmmmmmmmmmmmmmmmmmmm00000000000"]};
+const PAL=["#00000000","#1e1210","#3b231c","#5a3829","#84573d","#b97a42","#dba468","#f1ebdd","#bfb8a8","#dc9328","#170d0a","#fff4d8","#34190f","#a8786a","#8fd0f5","#d4176c","#a00f50","#f7ecf2","#ef4a95","#bcc7cd","#8b99a2","#66083a","#00000047"];
+const PAL_NAMES=["Transparente","Contorno","Pelo oscuro","Pelo medio","Pelo claro","Caramelo hocico y orejas","Caramelo claro","Barbita blanca","Barbita sombra","Ojo ámbar","Pupila","Brillo del ojo","Nariz","Brillo de nariz","Lágrima","Pijama fucsia","Pijama sombra","Pijama dibujo blanco","Pijama luz","Arnés gris claro","Arnés sombra","Contorno del pijama","Sombra en el suelo"];
+const PJ_OFF={15:3,16:2,17:3,18:4,21:1};
+const dec=rows=>rows.map(r=>[...r].map(c=>c==="."?0:parseInt(c,36)));
+const SP={};for(const k in SPR)SP[k]=dec(SPR[k]);
+const NAMES={idle0:["Reposo A","Respira abajo"],idle1:["Reposo B","Respira arriba"],blink:["Parpadeo","Ojos cerrados"],sad0:["Triste A","Orejas caídas, lágrima"],sad1:["Triste B","Cabeza más baja"],sleep0:["Dormida A","Ojos cerrados"],sleep1:["Dormida B","Respira"]};
+const PLUSH=dec(["..11..........",".1221.11111111","12231122222221","12222222322221",".1222222222221",".1444444444441","..11111111111."]);
+const PLUSH_PAL=["#00000000","#4a3320","#d9b985","#f0dcb4","#a98657"];
+const ICO={
+bone:["........","11....11","11111111","11111111","11....11","........","........","........"],
+bolt:["...111..","..111...",".111....",".11111..","...111..","..11....",".1......","........"],
+drop:["...11...","...11...","..1111..",".111111.",".111111.",".111111.","..1111..","........"],
+ball:["..1111..",".1.11.1.","1..11..1","1..11..1","1..11..1","1..11..1",".1.11.1.","..1111.."],
+heart:[".11..11.","11111111","11111111","11111111",".111111.","..1111..","...11...","........"],
+moon:["..1111..",".111....","111.....","111.....","111.....",".111....","..1111..","........"],
+shirt:[".11..11.","11111111","11111111",".111111.",".111111.",".111111.",".111111.","........"]};
+const ICON={};for(const k in ICO)ICON[k]=ICO[k].map(r=>[...r].map(c=>c==="1"?1:0));
+const FXP={1:"#e23a78",2:"#ffd1e3",3:"#ffffff",4:"#8fd0f5",5:"#f1ebdd",6:"#bfb8a8",7:"#e8b82a"};
+const FXR={heart:[".11.11.","1211111","1111111",".11111.","..111..","...1..."],
+ bubble:[".444.","43..4","4...4","4...4",".444."],
+ z:["33333","...3.","..3..",".3...","33333"],
+ ball:[".7777.","737777","777777","777777","777777",".7777."],
+ bone:["55...55","5555555","5555555","66...66"]};
+const FX={};for(const k in FXR)FX[k]=FXR[k].map(r=>[...r].map(c=>c==="."?0:+c));
+/* ---- fondos: paletas día/noche (misma grilla) ---- */
+const SCN={
+laguna:{day:["#0a3fb5","#0f4fc4","#1a63d6","#3a82e2","#2b2d36","#3d4049","#6b6e78","#9a8650","#6e6038","#1d4a4a","#2a6660","#5b9a8e","#b9a99b","#d79b87","#7e7167","#b7c3a3","#e08a2a","#e8b82a","#0a3fb5","#e8f0ff","#0f4fc4","#0f4fc4"],
+ night:["#05071c","#080c2b","#0e1540","#1a2255","#10131f","#191d2e","#3a4263","#2c2a30","#1c1b22","#0b1c28","#102b38","#2f5f78","#5a5662","#6d5a68","#2e2c38","#6c7a72","#b0702a","#b69a2c","#f4efe0","#2b3560","#f0e9c8","#f4efe0"]},
+dormitorio:{day:["#eadfb8","#d9cd9c","#7a4a2a","#6aa56e","#7fb4e8","#c8873c","#e0a95c","#4a3322","#3f8d96","#f2f0e6","#8d9fbe","#5f7396","#c0cde2","#e9e1cf","#cfc4ac","#f7f3e8","#8fc4f0","#8fc4f0","#ffffff"],
+ night:["#2f2c4a","#25233c","#4a2f22","#3b5a52","#2a3a5c","#6e4a2a","#8a6535","#2a1f18","#27565c","#aeb0ba","#4a5779","#33405f","#6d7da0","#8b83a0","#6e6888","#a9a3c0","#0b1030","#f4efe0","#f0e9c8"]}};
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function lagoon(W,H){
+  const g=new Uint8Array(W*H),r=rng(5),set=(x,y,v)=>{if(x>=0&&x<W&&y>=0&&y<H)g[y*W+x]=v};
+  const hz=Math.floor(H*.5);
+  for(let y=0;y<hz;y++)for(let x=0;x<W;x++){const p=y/hz*3.6,b=Math.floor(p);set(x,y,Math.min(3,b+(((x+y)&1)===0&&p-b>.72?1:0)))}
+  for(let i=0;i<14;i++){const x=Math.floor(r()*W),y=3+Math.floor(r()*Math.floor(hz*.18));set(x,y,18)}
+  for(let i=0;i<9;i++){const x=Math.floor(r()*W),y=Math.floor(hz*.31)+Math.floor(r()*Math.floor(hz*.2));set(x,y,21)}
+  const mx=Math.floor(W*.78),my=Math.floor(hz*.42);
+  for(let y=-3;y<=3;y++)for(let x=-3;x<=3;x++)if(x*x+y*y<=10)set(mx+x,my+y,20);
+  for(const [cx,cy,rx] of [[.2,.55,9],[.55,.7,6],[.86,.6,8]])for(let y=-1;y<=1;y++)for(let x=-rx;x<=rx;x++)if(Math.abs(x)<=rx-Math.abs(y)*3)set(Math.floor(W*cx)+x,Math.floor(hz*cy)+y,19);
+  const peaks=[[.04,.10*H,.5],[.30,.30*H,1.7],[.62,.15*H,.55],[1.02,.44*H,.95],[.44,.12*H,.8]];
+  for(let x=0;x<W;x++){let hh=0,lit=0;for(const [c,h,s] of peaks){const v=h-s*Math.abs(x-c*W);if(v>hh){hh=v;lit=x<c*W?1:0}}
+    const top=Math.floor(hz-hh-(r()<.3?1:0));
+    for(let y=Math.max(0,top);y<hz;y++){let v=4;if(lit?(x*2+y)%5<2:((x*2+y*3)%11===0||(x+y*2)%13===0))v=5;if(y-top<2&&lit)v=6;set(x,y,v)}}
+  for(let y=hz-4;y<hz;y++)for(let x=0;x<W;x++)if(g[y*W+x]!==4&&g[y*W+x]!==5&&g[y*W+x]!==6||y>hz-3)set(x,y,r()<.22?8:7);
+  const le=Math.floor(H*.72);
+  for(let y=hz;y<le;y++){const t=(y-hz)/(le-hz);for(let x=0;x<W;x++)set(x,y,t<.12?9:(t>.7&&r()<.3?9:10))}
+  for(let i=0;i<W*1.2;i++){const y=hz+1+Math.floor(r()*(le-hz-2)),x=Math.floor(r()*W),l=2+Math.floor(r()*4);for(let k=0;k<l;k++)set(x+k,y,11)}
+  const top=x=>Math.floor(H*.70+H*.05*(1-x/W)+Math.sin(x/5)*.8);
+  for(let x=0;x<W;x++)for(let y=top(x);y<H;y++)set(x,y,y===top(x)?14:12);
+  const blob=(cx,cy,rx,ry,v,only)=>{for(let y=-ry;y<=ry;y++)for(let x=-rx;x<=rx;x++)if((x*x)/(rx*rx+.5)+(y*y)/(ry*ry+.5)<=1){const X=cx+x,Y=cy+y;if(X>=0&&X<W&&Y>=0&&Y<H&&g[Y*W+X]>=12)set(X,Y,v)}};
+  for(let i=0;i<7;i++)blob(Math.floor(r()*W),Math.floor(H*.74+r()*H*.24),4+Math.floor(r()*6),2+Math.floor(r()*3),13);
+  for(let i=0;i<9;i++)blob(Math.floor(r()*W),Math.floor(H*.72+r()*H*.26),3+Math.floor(r()*5),2+Math.floor(r()*2),15);
+  for(let i=0;i<6;i++)blob(Math.floor(r()*W),Math.floor(H*.75+r()*H*.23),3+Math.floor(r()*4),2,14);
+  for(let i=0;i<34;i++){const cx=Math.floor(r()*W),cy=Math.floor(H*.72+r()*H*.27),w=2+Math.floor(r()*3),v=r()<.55?16:17;for(let j=0;j<2;j++)for(let k=0;k<w;k++){const X=cx+k,Y=cy+j;if(X<W&&Y<H&&g[Y*W+X]>=12)set(X,Y,v)}}
+  return g}
+function bedroom(W,H){
+  const g=new Uint8Array(W*H),r=rng(9),set=(x,y,v)=>{if(x>=0&&x<W&&y>=0&&y<H)g[y*W+x]=v};
+  const rect=(x,y,w,h,v)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++)set(x+i,y+j,v)};
+  const fl=Math.floor(H*.52);
+  rect(0,0,W,fl,0);rect(Math.floor(W*.72),0,W,fl,1);
+  const wx=Math.floor(W*.07),wy=Math.floor(H*.09);
+  rect(wx-2,wy-2,24,32,2);rect(wx,wy,20,28,16);rect(wx+9,wy,2,28,2);rect(wx,wy+13,20,2,2);
+  set(wx+4,wy+4,17);set(wx+14,wy+7,17);set(wx+5,wy+20,17);set(wx+15,wy+9,18);set(wx+16,wy+9,18);set(wx+15,wy+8,18);
+  const px=Math.floor(W*.52),py=Math.floor(H*.1);
+  rect(px-1,py-1,24,17,2);rect(px,py,22,15,4);
+  for(let x=0;x<22;x++){const h=3+Math.floor(5*Math.abs(Math.sin(x/4)));for(let y=15-h;y<15;y++)set(px+x,py+y,3)}
+  const qx=Math.floor(W*.82),qy=Math.floor(H*.27);
+  rect(qx,qy,13,17,5);for(let a=0;a<30;a++){set(qx+6+Math.round(Math.cos(a/4.7)*3),qy+8+Math.round(Math.sin(a/4.7)*4),6)}
+  const sy=Math.floor(H*.42);rect(Math.floor(W*.5),sy,Math.floor(W*.36),2,7);
+  rect(Math.floor(W*.54),sy-9,9,9,8);rect(Math.floor(W*.54)+10,sy-7,7,7,9);
+  const bt=x=>Math.floor(H*.46+Math.sin(x/9)*2.2);
+  for(let x=0;x<W;x++)for(let y=bt(x);y<H;y++)set(x,y,10);
+  for(let i=0;i<W*H*.12;i++){const x=Math.floor(r()*W),y=Math.floor(H*.46+r()*H*.26);if(g[y*W+x]===10){const v=r()<.5?11:12;set(x,y,v);if(r()<.5)set(x+1,y,v)}}
+  const st=x=>Math.floor(H*.72+Math.sin(x/12+1)*2);
+  for(let x=0;x<W;x++)for(let y=st(x);y<H;y++)set(x,y,y===st(x)?15:13);
+  for(let x=0;x<W;x++)for(let y=st(x)+3;y<H;y++)if((x*2+y*5)%37<2)set(x,y,14);
+  for(let i=0;i<40;i++){const x=Math.floor(r()*W),y=Math.floor(H*.76+r()*H*.22);if(g[y*W+x]===13){set(x,y,r()<.5?14:15)}}
+  return g}
+const GEN={laguna:lagoon,dormitorio:bedroom};
+/* ---- validación de grillas ---- */
+const gridErrors=[];
+function checkGrid(name,grid,n){
+  const w=grid[0].length;grid.forEach((r,i)=>{if(r.length!==w)gridErrors.push(name+": fila "+i+" mide "+r.length+" y la primera "+w);r.forEach((v,j)=>{if(!(v>=0&&v<n))gridErrors.push(name+": índice "+v+" fuera de la paleta en ("+j+","+i+")")})});}
+for(const k in SP){checkGrid(k,SP[k],PAL.length);if(SP[k].length!==48||SP[k][0].length!==48)gridErrors.push(k+": no es 48x48")}
+checkGrid("peluche",PLUSH,PLUSH_PAL.length);for(const k in ICON)checkGrid("icono "+k,ICON[k],2);for(const k in FX)checkGrid("fx "+k,FX[k],8);
+window.__gridCheck={ok:gridErrors.length===0,errors:gridErrors};
+if(gridErrors.length)console.error("Grillas inválidas:\n"+gridErrors.join("\n"));
+/* ---- dibujo ---- */
+const spritePal=pj=>PAL.map((c,i)=>pj?c:PAL[PJ_OFF[i]??i]);
+function blit(ctx,grid,pal,ox,oy,s){for(let y=0;y<grid.length;y++)for(let x=0;x<grid[y].length;x++){const v=grid[y][x];if(v){ctx.fillStyle=pal[v];ctx.fillRect((ox+x)*s,(oy+y)*s,s,s)}}}
+const reduce=matchMedia("(prefers-reduced-motion: reduce)");
+const S=4;
+const st={est:"reposo",pj:false,hora:"dia",lugar:"laguna",t:0,fx:[],bob:0};
+const MOOD={reposo:"Tranquila, mirando la laguna.",triste:"Se siente sola. Necesita cariño.",dormida:"Durmiendo en su frazada."};
+const METERS=[["Comida","bone","#e08a2a"],["Energía","bolt","#e8b82a"],["Higiene","drop","#2a79d6"],["Diversión","ball","#3f9a7a"],["Cariño","heart","#d4176c"]];
+const VALS={reposo:[8,6,9,4,7],triste:[5,4,6,2,1],dormida:[6,9,8,5,6]};
+const SEQ={reposo:["idle0","idle0","idle1","idle1","idle0","idle0","idle1","idle1","idle0","blink"],triste:["sad0","sad0","sad1","sad1"],dormida:["sleep0","sleep0","sleep0","sleep0","sleep1","sleep1","sleep1","sleep1"]};
+const cv=document.getElementById("cv"),scene=document.getElementById("scene"),lo=document.createElement("canvas");
+let W=0,H=0,bg=null,bgKey="";
+function layout(){const w=scene.clientWidth,h=scene.clientHeight;const nW=Math.floor(w/S),nH=Math.floor(h/S);if(!nW||!nH)return;W=nW;H=nH;
+  cv.width=W*S;cv.height=H*S;cv.style.width=W*S+"px";cv.style.height=H*S+"px";cv.style.left=Math.floor((w-W*S)/2)+"px";cv.style.top=Math.floor((h-H*S)/2)+"px";lo.width=W;lo.height=H;bgKey="";draw()}
+function frameName(){const s=SEQ[st.est];return st.bob?(st.t%2?"idle1":"idle0"):s[st.t%s.length]}
+function draw(){
+  if(!W)return;
+  const key=st.lugar+W+"x"+H;if(key!==bgKey){bg=GEN[st.lugar](W,H);bgKey=key}
+  const c=lo.getContext("2d");c.imageSmoothingEnabled=false;
+  const bp=SCN[st.lugar][st.hora==="noche"?"night":"day"];
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){c.fillStyle=bp[bg[y*W+x]];c.fillRect(x,y,1,1)}
+  const sx=Math.floor((W-48)/2),base=Math.floor(H*(st.lugar==="laguna"?.84:.9)),sy=base-45;
+  if(st.lugar==="dormitorio")blit(c,PLUSH,PLUSH_PAL,sx-9,base-6,1);
+  blit(c,SP[frameName()],spritePal(st.pj),sx,sy,1);
+  for(const f of st.fx){const g=FX[f.k];blit(c,g,FXP,Math.round(f.x),Math.round(f.y),1)}
+  if(st.est==="dormida"){const p=Math.floor(st.t/2)%3;for(let i=0;i<3;i++){const g=FX.z;blit(c,g,FXP,sx+36+i*5,sy+8-((p+i)%3)*6,1)}}
+  const m=cv.getContext("2d");m.imageSmoothingEnabled=false;m.clearRect(0,0,cv.width,cv.height);m.drawImage(lo,0,0,W,H,0,0,W*S,H*S)}
+function addFx(kind){
+  const sx=Math.floor((W-48)/2),base=Math.floor(H*(st.lugar==="laguna"?.84:.9)),sy=base-45;st.fx=[];st.fxT=0;st.fxKind=kind;st.fxSx=sx;st.fxSy=sy;st.fxBase=base;
+  if(kind==="cariño")for(let i=0;i<5;i++)st.fx.push({k:"heart",x:sx+8+i*7,y:sy+4-i%2*4,vy:-2});
+  if(kind==="bano")for(let i=0;i<7;i++)st.fx.push({k:"bubble",x:sx+6+i*5,y:sy+30-(i%3)*8,vy:-2});
+  if(kind==="comida")st.fx.push({k:"bone",x:sx+20,y:sy-8,vy:4});
+  if(kind==="jugar")st.fx.push({k:"ball",x:sx+38,y:base-6,vy:0});
+  st.fxLife=reduce.matches?0:6;if(reduce.matches)staticFx(kind);draw();if(reduce.matches)setTimeout(()=>{st.fx=[];st.bob=0;draw()},1500)}
+function staticFx(kind){if(kind==="comida"){st.fx[0].y=st.fxSy+24}}
+function tick(){st.t++;
+  if(st.fxLife>0){st.fxLife--;st.fxT++;
+    for(const f of st.fx){if(st.fxKind==="jugar"){f.y=st.fxBase-6-Math.round(Math.abs(Math.sin(st.fxT*.9))*16);f.x+=1}else if(st.fxKind==="comida"){f.y=Math.min(f.y+f.vy,st.fxSy+24)}else f.y+=f.vy}
+    st.bob=st.fxKind==="comida"||st.fxKind==="jugar"?1:0;if(!st.fxLife){st.fx=[];st.bob=0}}
+  draw()}
+let timer=0;
+function run(){clearInterval(timer);if(!reduce.matches)timer=setInterval(tick,300);draw()}
+reduce.addEventListener?.("change",run);
+/* ---- iconos y medidores ---- */
+function icon(cn,name,color){const c=cn.getContext("2d");c.clearRect(0,0,8,8);c.fillStyle=color;ICON[name].forEach((r,y)=>r.forEach((v,x)=>{if(v)c.fillRect(x,y,1,1)}))}
+function paintIcons(){const ink=getComputedStyle(document.getElementById("screen")).getPropertyValue("--g-ink").trim();document.querySelectorAll("canvas[data-ico]").forEach(c=>icon(c,c.dataset.ico,ink))}
+const ml=document.getElementById("meters");
+METERS.forEach(([n,ic,col],i)=>{const li=document.createElement("li");li.className="meter";li.innerHTML='<canvas width="8" height="8" data-ico="'+ic+'" aria-hidden="true"></canvas><span>'+n+'</span><div class="cells" role="meter" aria-label="'+n+'" aria-valuemin="0" aria-valuemax="100" style="--c:'+col+'">'+"<i></i>".repeat(10)+'</div><span class="val"></span>';ml.appendChild(li)});
+function paintMeters(){const v=VALS[st.est];[...ml.children].forEach((li,i)=>{li.querySelectorAll(".cells i").forEach((e,k)=>e.classList.toggle("on",k<v[i]));const cl=li.querySelector(".cells");cl.setAttribute("aria-valuenow",v[i]*10);const val=li.querySelector(".val");val.textContent=v[i]*10+"%";val.classList.toggle("low",v[i]<=3)})}
+/* ---- estado ---- */
+const scr=document.getElementById("screen");
+function sync(){scr.dataset.hora=st.hora;document.getElementById("mood").textContent=MOOD[st.est];document.getElementById("chip").textContent=(st.lugar==="laguna"?"Laguna":"Dormitorio")+" · "+(st.hora==="noche"?"Noche":"Día");document.getElementById("clock").textContent=st.hora==="noche"?"9:40":"7:05";
+  document.querySelector('[data-act="dormir"]').setAttribute("aria-pressed",String(st.est==="dormida"));document.querySelector('[data-act="pijama"]').setAttribute("aria-pressed",String(st.pj));
+  const set=(n,v)=>{const e=document.querySelector('input[name="'+n+'"][value="'+v+'"]');if(e)e.checked=true};set("est",st.est);set("pj",st.pj?"1":"0");set("hora",st.hora);set("lugar",st.lugar);
+  paintMeters();paintIcons();st.t=0;draw()}
+document.getElementById("mock-controls").addEventListener("change",e=>{const n=e.target.name,v=e.target.value;if(n==="est")st.est=v;if(n==="pj")st.pj=v==="1";if(n==="hora")st.hora=v;if(n==="lugar")st.lugar=v;sync()});
+document.getElementById("btns").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const a=b.dataset.act;
+  if(a==="pijama"){st.pj=!st.pj;sync()}
+  else if(a==="dormir"){if(st.est==="dormida"){st.est="reposo";st.lugar="laguna"}else{st.est="dormida";st.lugar="dormitorio"}sync()}
+  else{if(st.est==="dormida"){st.est="reposo"}sync();addFx(a)}});
+/* ---- lámina ---- */
+const sprites=document.getElementById("sprites");
+function card(title,sub,w,h,painter,scale){const d=document.createElement("div");d.className="card";const c=document.createElement("canvas");c.width=w*scale;c.height=h*scale;painter(c.getContext("2d"),scale);c.setAttribute("role","img");c.setAttribute("aria-label",title);d.innerHTML="<b>"+title+"</b>";d.appendChild(c);d.insertAdjacentHTML("beforeend","<small>"+sub+"</small>");return d}
+function checker(c,w,h,s){for(let y=0;y<h;y++)for(let x=0;x<w;x++){c.fillStyle=(x+y)%2?"#d4d7e0":"#e4e6ee";c.fillRect(x*s,y*s,s,s)}}
+function gridLines(c,w,h,s){c.strokeStyle="rgba(20,20,40,.14)";c.lineWidth=1;c.beginPath();for(let i=0;i<=w;i++){c.moveTo(i*s+.5,0);c.lineTo(i*s+.5,h*s)}for(let j=0;j<=h;j++){c.moveTo(0,j*s+.5);c.lineTo(w*s,j*s+.5)}c.stroke()}
+[["idle0",1],["idle1",1],["blink",0],["sad0",1],["sad1",0],["sleep0",1]].forEach(([k,pj])=>sprites.appendChild(card(NAMES[k][0]+(pj?" · con pijama":" · sin pijama"),NAMES[k][1]+" · 48 × 48",48,48,(c,s)=>{checker(c,48,48,s);blit(c,SP[k],spritePal(!!pj),0,0,s);gridLines(c,48,48,s)},6)));
+sprites.appendChild(card("Peluche beige","14 × 7, objeto del dormitorio",14,7,(c,s)=>{checker(c,14,7,s);blit(c,PLUSH,PLUSH_PAL,0,0,s);gridLines(c,14,7,s)},16));
+const pal=document.getElementById("pal");
+PAL.forEach((h,i)=>{if(!i)return;const li=document.createElement("li");const hx=h.slice(0,7).toUpperCase();const alpha=h.length>7?" · "+Math.round(parseInt(h.slice(7),16)/2.55)+"%":"";const m=PJ_OFF[i]?" · sin pijama: "+PAL[PJ_OFF[i]].toUpperCase():"";li.innerHTML='<span class="sw" style="--c:'+h+'"></span><span class="n"><span style="color:var(--fg);font-size:14px">'+PAL_NAMES[i]+'</span><span><code>'+i+" "+hx+'</code>'+alpha+m+'</span></span>';pal.appendChild(li)});
+const bgs=document.getElementById("bgs");
+[["laguna","day","Laguna de día"],["laguna","night","Laguna de noche"],["dormitorio","day","Dormitorio de día"],["dormitorio","night","Dormitorio de noche"]].forEach(([k,t,title])=>{const w=100,h=80;const g=GEN[k](w,h);bgs.appendChild(card(title,"Paleta "+(t==="day"?"diurna":"nocturna")+" sobre la misma grilla de "+w+" × "+h,w,h,(c,s)=>{const p=SCN[k][t];for(let y=0;y<h;y++)for(let x=0;x<w;x++){c.fillStyle=p[g[y*w+x]];c.fillRect(x*s,y*s,s,s)}},3))});
+/* validar fondos */
+for(const k in SCN)for(const t in SCN[k]){const g=GEN[k](100,80);let mx=0;g.forEach(v=>{if(v>mx)mx=v});if(mx>=SCN[k][t].length)console.error("Paleta de fondo corta: "+k+" "+t)}
+new ResizeObserver(layout).observe(scene);
+function boot(){sync();layout();run()}
+if(document.fonts?.ready)document.fonts.ready.then(()=>{paintIcons()});
+boot();
+</script>

@@ -25,3 +25,13 @@ test('instalada: muestra Clarita', async ({ page }) => {
   await expect(page.locator('#instalar')).toBeHidden();
   expect(errores).toEqual([]);
 });
+
+test.describe('iPad con user agent móvil', () => {
+  test.use({ userAgent: 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' });
+
+  test('no instalada: muestra la pantalla de instalación', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Agrega Clarita a tu inicio' })).toBeVisible();
+    await expect(page.locator('#app')).toBeHidden();
+  });
+});

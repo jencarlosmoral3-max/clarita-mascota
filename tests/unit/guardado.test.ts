@@ -99,14 +99,20 @@ describe('cargar', () => {
     expect(guardar(almacen, estado, soloLectura)).toBe(false);
     expect(datos.get(CLAVE)).toBe(crudo);
   });
-  test('getItem que lanza: sin dato, no solo lectura', () => {
+  test('getItem que lanza: solo lectura y guardar no pisa la partida', () => {
+    let escrituras = 0;
     const almacen: Almacen = {
       getItem: () => {
         throw new Error('bloqueado');
       },
-      setItem: () => {},
+      setItem: () => {
+        escrituras++;
+      },
     };
-    expect(cargar(almacen, AHORA)).toEqual({ estado: estadoInicial(AHORA), soloLectura: false });
+    const r = cargar(almacen, AHORA);
+    expect(r).toEqual({ estado: estadoInicial(AHORA), soloLectura: true });
+    expect(guardar(almacen, r.estado, r.soloLectura)).toBe(false);
+    expect(escrituras).toBe(0);
   });
 });
 

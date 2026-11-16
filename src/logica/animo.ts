@@ -14,7 +14,7 @@ const FRASES_NECESIDAD = {
 
 const NECESIDADES = ['comida', 'energia', 'higiene', 'diversion'] as const;
 
-export function animo(estado: Estado, _ahora: number): Animo {
+export function animo(estado: Estado): Animo {
   if (estado.dormida) return { animacion: 'dormida', frase: FRASE_DORMIDA };
   let peor: (typeof NECESIDADES)[number] = 'comida';
   for (const n of NECESIDADES) if (estado[n] < estado[peor]) peor = n;

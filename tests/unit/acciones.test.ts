@@ -32,6 +32,14 @@ describe('cuidados', () => {
     expect(fn(base({ [k]: 70 })).carino).toBe(50);
     expect(fn(base({ [k]: 69.9 })).carino).toBe(52);
   });
+  test.each([
+    ['alimentar', alimentar, 'comida'],
+    ['jugar', jugar, 'diversion'],
+    ['banar', banar, 'higiene'],
+  ] as const)('%s topa en 100 y nunca baja el medidor previo', (_n, fn, k) => {
+    expect(fn(base({ [k]: 95 }))[k]).toBe(100);
+    for (const v of [0, 50, 99.5, 100]) expect(fn(base({ [k]: v }))[k]).toBeGreaterThanOrEqual(v);
+  });
   test('cariño topa en 100', () => {
     expect(alimentar(base({ comida: 0, carino: 99 })).carino).toBe(100);
   });

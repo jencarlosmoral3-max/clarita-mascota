@@ -23,13 +23,13 @@ const conCarino = (e: Estado, previo: number): number =>
   previo < UMBRAL_CUIDADO_UTIL ? tope(e.carino + CARINO_POR_CUIDADO) : e.carino;
 
 export const alimentar = (e: Estado): Estado =>
-  puede(e, 'alimentar') ? { ...e, comida: tope(SUBIDA_COMIDA), carino: conCarino(e, e.comida) } : e;
+  puede(e, 'alimentar') ? { ...e, comida: tope(e.comida + SUBIDA_COMIDA), carino: conCarino(e, e.comida) } : e;
 
 export const jugar = (e: Estado): Estado =>
-  puede(e, 'jugar') ? { ...e, diversion: tope(SUBIDA_DIVERSION), carino: conCarino(e, e.diversion) } : e;
+  puede(e, 'jugar') ? { ...e, diversion: tope(e.diversion + SUBIDA_DIVERSION), carino: conCarino(e, e.diversion) } : e;
 
 export const banar = (e: Estado): Estado =>
-  puede(e, 'banar') ? { ...e, higiene: tope(SUBIDA_HIGIENE), carino: conCarino(e, e.higiene) } : e;
+  puede(e, 'banar') ? { ...e, higiene: tope(e.higiene + SUBIDA_HIGIENE), carino: conCarino(e, e.higiene) } : e;
 
 export const acariciar = (e: Estado): Estado =>
   puede(e, 'acariciar')

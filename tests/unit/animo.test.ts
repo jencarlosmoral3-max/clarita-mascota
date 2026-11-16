@@ -13,13 +13,13 @@ const bien = (o: Partial<Estado> = {}): Estado => ({
 
 describe('animo', () => {
   test('dormida gana aunque haya necesidades', () => {
-    expect(animo(bien({ dormida: true, comida: 0 }), 0).animacion).toBe('dormida');
+    expect(animo(bien({ dormida: true, comida: 0 })).animacion).toBe('dormida');
   });
   test('todo bien: reposo', () => {
-    expect(animo(bien(), 0).animacion).toBe('reposo');
+    expect(animo(bien()).animacion).toBe('reposo');
   });
   test('exactamente en el umbral no es triste', () => {
-    expect(animo(bien({ comida: 30 }), 0).animacion).toBe('reposo');
+    expect(animo(bien({ comida: 30 })).animacion).toBe('reposo');
   });
   test.each([
     ['comida', 'Clarita tiene hambre'],
@@ -27,9 +27,9 @@ describe('animo', () => {
     ['higiene', 'Clarita necesita un baño'],
     ['diversion', 'Clarita quiere jugar'],
   ] as const)('%s baja: triste con su frase', (k, frase) => {
-    expect(animo(bien({ [k]: 29 }), 0)).toEqual({ animacion: 'triste', frase });
+    expect(animo(bien({ [k]: 29 }))).toEqual({ animacion: 'triste', frase });
   });
   test('nombra la necesidad más baja', () => {
-    expect(animo(bien({ comida: 25, higiene: 10 }), 0).frase).toBe('Clarita necesita un baño');
+    expect(animo(bien({ comida: 25, higiene: 10 })).frase).toBe('Clarita necesita un baño');
   });
 });

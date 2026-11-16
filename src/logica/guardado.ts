@@ -17,11 +17,12 @@ const MIGRACIONES: Record<number, (o: Crudo) => Crudo> = {
 };
 
 export function cargar(almacen: Almacen, ahora: number): { estado: Estado; soloLectura: boolean } {
-  let texto: string | null = null;
+  let texto: string | null;
   try {
     texto = almacen.getItem(CLAVE);
   } catch {
-    texto = null;
+    // fallo transitorio: puede haber partida real; no se pisa con valores iniciales
+    return { estado: estadoInicial(ahora), soloLectura: true };
   }
   if (texto === null) return { estado: estadoInicial(ahora), soloLectura: false };
 

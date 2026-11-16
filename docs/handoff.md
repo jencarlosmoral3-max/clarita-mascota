@@ -15,16 +15,16 @@
 | H2 elección | CTO eligió **B** (48×48) el 2026-11-16; mock en `mocks/propuesta-b.html` |
 | H4 render | Cerrado, PR #5 |
 | H5 UI e integración | Cerrado, PR #5. Falta gate de UI (`web-design-guidelines`, `impeccable audit`) |
-| H6 iconos, actualización, entrega | No iniciado |
+| H6 iconos, actualización, entrega | Iconos cerrados, PR #9. Falta prueba de actualización y checklist en iPhone real |
 
 ## Estado (2026-11-16)
 
 - **El juego es jugable en local**: `npm run dev` (en escritorio se juega directo; en iPhone sin
   instalar muestra la pantalla de instalación). Medidores, 6 acciones, tocar a Clarita, pijama,
   día/noche, dormitorio al dormir, animación y efectos, guardado local, offline.
-- `main` verificado: `npm run typecheck` limpio, `npm test` 75/75, `npm run e2e` 16/16 (WebKit,
+- `main` verificado: `npm run typecheck` limpio, `npm test` 75/75, `npm run e2e` 17/17 (WebKit,
   perfil iPhone 13).
-- Repo: GitHub privado `jencarlosmoral3-max/clarita-mascota`. `gh` y `git push/fetch` se corren con
+- Repo: GitHub público `jencarlosmoral3-max/clarita-mascota`. `gh` y `git push/fetch` se corren con
   `GH_TOKEN=$(gh auth token -u jencarlosmoral3-max)`; la cuenta activa global de `gh` sigue siendo
   `JoseluisLarrazabal`.
 - Plantilla Game-Studios retirada del proyecto: entera en `~/respaldo-ccgs-clarita/`.
@@ -55,9 +55,25 @@
 
 ## Siguiente paso concreto
 
-H6: iconos con el sprite real de Clarita (`scripts/iconos.ts`, hoy una "C" provisional) y prueba de
-actualización del service worker en el teléfono. Antes de entregar: gate de UI
-(`web-design-guidelines`, `impeccable audit`) y Codex sobre `src/`.
+Prueba en el iPhone real (pendiente 1) y prueba de actualización del service worker: con la app
+instalada, mergear cualquier cambio visible y comprobar que al volver de segundo plano carga la
+versión nueva sin perder la partida. Antes de entregar: gate de UI (`web-design-guidelines`,
+`impeccable audit`) y Codex sobre `src/`.
+
+## H6 iconos (2026-11-16, PR #9)
+
+- Ícono de la app = Clarita: recorte 44×44 de `idle0` (cabeza con orejas, pecho y arnés gris, que
+  es su accesorio real) a escala entera sobre el azul de la laguna `#3a82e2`. Se regenera con
+  `npm run iconos`.
+- Tamaños: apple-touch-icon 180 (opaco), 192, 512, 512 maskable (sprite dentro de la zona segura).
+  Favicon = `icon-192.png`.
+- En 180 y 192 el sprite ocupa ~70 % del lado: la escala entera siguiente lo pegaría al borde.
+- Verificado: typecheck, 75/75 unit, 17/17 e2e (incluye dimensiones reales de cada PNG), CI verde,
+  `/code-review` y `/ponytail-review` sin hallazgos. En vivo: los 4 PNG responden 200 y son
+  idénticos byte a byte a los del repo.
+- **iOS guarda el ícono al instalar**: si la app ya estaba en la pantalla de inicio, hay que
+  quitarla y agregarla de nuevo para ver el ícono nuevo, y eso borra la partida.
+- No verificado: aspecto en la pantalla de inicio de un iPhone real. Codex: no verificado.
 
 ## Decisiones tomadas durante la ejecución
 

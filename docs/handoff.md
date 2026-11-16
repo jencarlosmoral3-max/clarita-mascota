@@ -17,6 +17,20 @@
 | H5 UI e integración | Cerrado, PR #5. Falta gate de UI (`web-design-guidelines`, `impeccable audit`) |
 | H6 iconos, actualización, entrega | Iconos cerrados, PR #9. Falta prueba de actualización y checklist en iPhone real |
 
+## Plan activo: animaciones y dinamismo
+
+**[Animaciones y dinamismo](plan-animaciones.md)** — aprobado por el CTO el 2026-11-16. Eligió los
+cuatro frentes (Clarita reacciona, se mueve sola, escenario vivo, interfaz con rebote) y validar el
+arte con vista previa antes de integrar.
+
+| Hito | Estado |
+|---|---|
+| M1 motor (reloj 100 ms, SEQ con duración, sprites cacheados) | En curso |
+| M2 arte por parches + vista previa | No iniciado. Compuerta: aprobación del CTO |
+| M3 escenario vivo | No iniciado |
+| M4 interfaz y partículas | No iniciado |
+| M5 comportamiento integrado | No iniciado. Depende de M2 aprobado |
+
 ## Estado (2026-11-16)
 
 - **El juego es jugable en local**: `npm run dev` (en escritorio se juega directo; en iPhone sin

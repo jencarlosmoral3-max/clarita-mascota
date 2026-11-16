@@ -2,7 +2,7 @@ import { ICONOS, type Icono } from '../arte/sprites';
 import { crearEscena, type EfectoAccion } from '../escena/render';
 import { puede, type Accion } from '../logica/acciones';
 import { animo } from '../logica/animo';
-import { UMBRAL_TRISTE } from '../logica/balance';
+import { MAX, MIN, UMBRAL_TRISTE } from '../logica/balance';
 import type { Estado } from '../logica/estado';
 import { esDeNoche } from '../logica/tiempo';
 
@@ -75,8 +75,8 @@ export function crearInterfaz(app: HTMLElement, alAccionar: (a: Accion) => void)
     const celdas = el('div', 'celdas');
     celdas.setAttribute('role', 'progressbar');
     celdas.setAttribute('aria-label', nombre);
-    celdas.setAttribute('aria-valuemin', '0');
-    celdas.setAttribute('aria-valuemax', '100');
+    celdas.setAttribute('aria-valuemin', String(MIN));
+    celdas.setAttribute('aria-valuemax', String(MAX));
     celdas.style.setProperty('--c', color);
     const cuadros = Array.from({ length: 10 }, () => el('i'));
     celdas.append(...cuadros);
@@ -95,7 +95,7 @@ export function crearInterfaz(app: HTMLElement, alAccionar: (a: Accion) => void)
     const rotulo = el('span', undefined, texto);
     b.append(ico, rotulo);
     botonesEl.append(b);
-    return { accion, b, ico, ic, rotulo };
+    return { accion, efectiva: accion as Accion, b, ico, ic, rotulo };
   });
 
   const panel = el('div', 'panel');
@@ -103,15 +103,14 @@ export function crearInterfaz(app: HTMLElement, alAccionar: (a: Accion) => void)
   raiz.append(cab, escenaEl, panel);
   app.replaceChildren(raiz);
 
-  let actual: Estado | undefined;
-  // Con la partida dormida el botón dice Despertar y emite esa acción.
-  for (const { accion, b } of botones)
-    b.addEventListener('click', () => alAccionar(accion === 'dormir' && actual?.dormida ? 'despertar' : accion));
-  canvas.addEventListener('pointerdown', () => alAccionar('acariciar'));
+  // Con la partida dormida el botón dice Despertar y emite esa acción (se calcula en pintar).
+  for (const bt of botones) bt.b.addEventListener('click', () => alAccionar(bt.efectiva));
+  canvas.addEventListener('pointerdown', (ev) => {
+    if (ev.isPrimary && ev.button === 0 && escena.tocaSprite(ev.clientX, ev.clientY)) alAccionar('acariciar');
+  });
 
   return {
     pintar(estado: Estado, ahora: number): void {
-      actual = estado;
       const noche = esDeNoche(ahora);
       raiz.dataset.hora = noche ? 'noche' : 'dia';
       const texto = animo(estado).frase;
@@ -124,15 +123,17 @@ export function crearInterfaz(app: HTMLElement, alAccionar: (a: Accion) => void)
       const sobreAcento = estilo.getPropertyValue('--g-on-accent').trim();
       for (const m of medidores) {
         const v = Math.round(estado[m.clave]);
-        m.cuadros.forEach((c, i) => c.classList.toggle('on', i < Math.round(v / 10)));
+        const encendidas = Math.min(10, Math.max(0, Math.ceil((v - MIN) / ((MAX - MIN) / 10))));
+        m.cuadros.forEach((c, i) => c.classList.toggle('on', i < encendidas));
         m.celdas.setAttribute('aria-valuenow', String(v));
         m.valor.textContent = `${v}%`;
-        m.valor.classList.toggle('bajo', estado[m.clave] < UMBRAL_TRISTE);
+        m.valor.classList.toggle('bajo', m.clave !== 'carino' && v < UMBRAL_TRISTE);
         pintarIcono(m.ico, m.ic, tinta);
       }
-      for (const { accion, b, ico, ic, rotulo } of botones) {
-        const a = accion === 'dormir' && estado.dormida ? 'despertar' : accion;
-        b.disabled = !puede(estado, a);
+      for (const bt of botones) {
+        const { accion, b, ico, ic, rotulo } = bt;
+        bt.efectiva = accion === 'dormir' && estado.dormida ? 'despertar' : accion;
+        b.disabled = !puede(estado, bt.efectiva);
         if (accion === 'dormir') rotulo.textContent = estado.dormida ? 'Despertar' : 'Dormir';
         const pulsado = accion === 'alternarPijama' && estado.pijama;
         if (accion === 'alternarPijama') b.setAttribute('aria-pressed', String(estado.pijama));

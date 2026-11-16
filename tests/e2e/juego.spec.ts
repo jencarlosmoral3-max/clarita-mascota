@@ -94,10 +94,45 @@ test('Pijama alterna aria-pressed', async ({ page }) => {
   await expect(b).toHaveAttribute('aria-pressed', 'false');
 });
 
+const diversionBaja = (ahora: number): Record<string, unknown> => ({ version: 1, comida: 80, energia: 80, higiene: 80, diversion: 20, carino: 50, dormida: false, pijama: false, ultimaVez: ahora }); // autocontenida: se serializa
+
+// Punto en px CSS dentro del canvas; (lx, ly) en píxeles lógicos (sprite: 48x48 en geo()).
+async function puntoCanvas(page: Page, f: (w: number, h: number) => [number, number]): Promise<[number, number]> {
+  return page.evaluate((fuente) => {
+    const c = document.querySelector('canvas[role="img"]') as HTMLCanvasElement;
+    const r = c.getBoundingClientRect();
+    const s = Number(c.dataset.escala);
+    const W = c.width / s;
+    const H = c.height / s;
+    const [lx, ly] = (new Function('w', 'h', `return (${fuente})(w, h)`) as (w: number, h: number) => [number, number])(W, H);
+    return [r.left + (lx / W) * r.width, r.top + (ly / H) * r.height] as [number, number];
+  }, f.toString());
+}
+
 test('tocar a Clarita en el canvas acaricia', async ({ page }) => {
-  await abrir(page, (ahora) => ({ version: 1, comida: 80, energia: 80, higiene: 80, diversion: 20, carino: 50, dormida: false, pijama: false, ultimaVez: ahora }));
-  await page.getByRole('img', { name: /Clarita/ }).dispatchEvent('pointerdown');
+  await abrir(page, diversionBaja);
+  const [x, y] = await puntoCanvas(page, (w, h) => [Math.floor((w - 48) / 2) + 24, Math.floor(h * 0.84) - 45 + 24]);
+  await page.mouse.click(x, y);
   expect(await valor(page, 'Diversión')).toBeGreaterThan(20);
+});
+
+test('tocar el cielo del canvas no acaricia', async ({ page }) => {
+  await abrir(page, diversionBaja);
+  const [x, y] = await puntoCanvas(page, () => [3, 3]);
+  await page.mouse.click(x, y);
+  for (const n of MEDIDORES) expect(await valor(page, n), n).toBe(n === 'Diversión' ? 20 : n === 'Cariño' ? 50 : 80);
+});
+
+test('la animación corre y los efectos desaparecen', async ({ page }) => {
+  await abrir(page, diversionBaja);
+  const canvas = page.getByRole('img', { name: /Clarita/ });
+  const vistos = new Set<string>();
+  await expect
+    .poll(async () => (vistos.add((await canvas.getAttribute('data-frame')) ?? ''), vistos.size), { timeout: 3000 })
+    .toBeGreaterThanOrEqual(2);
+  await page.getByRole('button', { name: 'Acariciar' }).click();
+  await expect.poll(async () => Number(await canvas.getAttribute('data-fx'))).toBeGreaterThan(0);
+  await expect.poll(async () => Number(await canvas.getAttribute('data-fx')), { timeout: 4000 }).toBe(0);
 });
 
 for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {

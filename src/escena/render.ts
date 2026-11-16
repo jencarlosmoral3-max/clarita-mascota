@@ -29,7 +29,9 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
   const lo = document.createElement('canvas');
   const loCtx = lo.getContext('2d');
   const reducir = matchMedia('(prefers-reduced-motion: reduce)');
-  const fondos = new Map<string, Uint8Array>();
+  // Solo la última entrada de cada cosa: fondo ya pintado y paleta del sprite.
+  let fondo: { clave: string; c: HTMLCanvasElement } | undefined;
+  let pal: { pijama: boolean; p: string[] } | undefined;
 
   let estado: Estado | undefined;
   let ahora = 0;
@@ -50,28 +52,37 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
   };
 
   function dibujar(): void {
-    if (!ctx || !loCtx || !estado || !W) return;
+    if (!ctx || !loCtx || !estado || !W || !H) return;
     const lugar = estado.dormida ? 'dormitorio' : 'laguna';
-    const clave = `${lugar}${W}x${H}`;
-    let g = fondos.get(clave);
-    if (!g) {
-      g = (lugar === 'laguna' ? laguna : dormitorio)(W, H);
-      fondos.set(clave, g);
+    const momento = esDeNoche(ahora) ? 'night' : 'day';
+    const clave = `${lugar}|${momento}|${W}x${H}`;
+    if (fondo?.clave !== clave) {
+      const c = document.createElement('canvas');
+      c.width = W;
+      c.height = H;
+      const fctx = c.getContext('2d');
+      if (!fctx) return;
+      const g = (lugar === 'laguna' ? laguna : dormitorio)(W, H);
+      const bp = SCN[lugar][momento];
+      for (let y = 0; y < H; y++)
+        for (let x = 0; x < W; x++) {
+          fctx.fillStyle = bp[g[y * W + x] ?? 0] ?? '#000';
+          fctx.fillRect(x, y, 1, 1);
+        }
+      fondo = { clave, c };
     }
-    const bp = SCN[lugar][esDeNoche(ahora) ? 'night' : 'day'];
-    for (let y = 0; y < H; y++)
-      for (let x = 0; x < W; x++) {
-        loCtx.fillStyle = bp[g[y * W + x] ?? 0] ?? '#000';
-        loCtx.fillRect(x, y, 1, 1);
-      }
+    loCtx.drawImage(fondo.c, 0, 0);
 
     const { sx, sy, base } = geo(lugar === 'laguna');
     const an = animo(estado).animacion;
     const secuencia = SEQ[an];
-    const bob = fx.length > 0 && (fxKind === 'alimentar' || fxKind === 'jugar');
+    const bob = fx.length > 0 && (fxKind === 'alimentar' || fxKind === 'jugar') && (an === 'reposo' || an === 'triste');
     const frame: Frame = bob ? (t % 2 ? 'idle1' : 'idle0') : (secuencia[t % secuencia.length] ?? 'idle0');
     if (lugar === 'dormitorio') blit(loCtx, PLUSH, PLUSH_PAL, sx - 9, base - 6);
-    blit(loCtx, SP[frame], paletaSprite(estado.pijama), sx, sy);
+    if (pal?.pijama !== estado.pijama) pal = { pijama: estado.pijama, p: paletaSprite(estado.pijama) };
+    canvas.dataset.frame = frame;
+    canvas.dataset.fx = String(fx.length);
+    blit(loCtx, SP[frame], pal.p, sx, sy);
     for (const f of fx) blit(loCtx, FX[f.k], FXP, Math.round(f.x), Math.round(f.y));
     if (an === 'dormida') {
       const p = Math.floor(t / 2) % 3;
@@ -89,9 +100,11 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     const wDev = Math.floor(escena.clientWidth * dpr);
     const hDev = Math.floor(escena.clientHeight * dpr);
     const s = Math.max(1, Math.min(Math.floor(wDev / ANCHO_MIN), Math.floor(hDev / ALTO_MIN)));
-    W = Math.ceil(wDev / s); // ceil: el sobrante se recorta, sin franja vacía
-    H = Math.ceil(hDev / s);
-    if (!W || !H) return;
+    const w = Math.ceil(wDev / s); // ceil: el sobrante se recorta, sin franja vacía
+    const h = Math.ceil(hDev / s);
+    if (!w || !h) return;
+    W = w;
+    H = h;
     canvas.width = W * s;
     canvas.height = H * s;
     lo.width = W;
@@ -121,24 +134,42 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     dibujar();
   }
 
+  function limpiarFx(): void {
+    clearTimeout(quitar);
+    fx = [];
+    fxVida = 0;
+  }
+
   function arrancar(): void {
     clearInterval(timer);
+    limpiarFx();
     if (!reducir.matches) timer = window.setInterval(tick, FRAME_MS);
     dibujar();
   }
   reducir.addEventListener('change', arrancar);
+  arrancar();
   new ResizeObserver(layout).observe(escena);
 
   return {
     pintar(e: Estado, ahoraMs: number): void {
+      if (estado && estado.dormida !== e.dormida) limpiarFx();
       estado = e;
       ahora = ahoraMs;
       if (!W) layout();
       else dibujar();
     },
+    tocaSprite(clientX: number, clientY: number): boolean {
+      if (!estado || !W || !H) return false;
+      const r = canvas.getBoundingClientRect();
+      const x = ((clientX - r.left) / r.width) * W;
+      const y = ((clientY - r.top) / r.height) * H;
+      const { sx, sy } = geo(!estado.dormida);
+      return x >= sx && x < sx + 48 && y >= sy && y < sy + 48;
+    },
     efecto(tipo: EfectoAccion): void {
       if (!estado || !W) return;
       const { sx, sy, base } = geo(!estado.dormida);
+      clearTimeout(quitar);
       fxGeo = { sy, base };
       fxKind = tipo;
       fxT = 0;
@@ -150,7 +181,6 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
       fxVida = reducir.matches ? 0 : 6;
       dibujar();
       if (reducir.matches) {
-        clearTimeout(quitar);
         quitar = window.setTimeout(() => {
           fx = [];
           dibujar();

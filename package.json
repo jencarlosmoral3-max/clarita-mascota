@@ -10,6 +10,7 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "typecheck": "tsc --noEmit",
+    "desplegar": "bash scripts/desplegar.sh",
     "iconos": "node --experimental-strip-types scripts/iconos.ts"
   },
   "devDependencies": {

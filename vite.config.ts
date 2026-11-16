@@ -4,7 +4,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 // Mismo valor que `body` en src/estilos.css.
 const FONDO = '#2b1a14';
 
+// En Pages de proyecto la app vive en /<repo>/; en dev, preview y e2e sigue en /.
 export default defineConfig({
+  base: process.env.BASE_PATH ?? '/',
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
@@ -21,8 +23,8 @@ export default defineConfig({
         lang: 'es',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
-        scope: '/',
+        start_url: '.',
+        scope: '.',
         background_color: FONDO,
         theme_color: FONDO,
         icons: [

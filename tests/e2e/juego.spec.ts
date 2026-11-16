@@ -97,22 +97,21 @@ test('Pijama alterna aria-pressed', async ({ page }) => {
 const diversionBaja = (ahora: number): Record<string, unknown> => ({ version: 1, comida: 80, energia: 80, higiene: 80, diversion: 20, carino: 50, dormida: false, pijama: false, ultimaVez: ahora }); // autocontenida: se serializa
 
 // Punto en px CSS dentro del canvas; (lx, ly) en píxeles lógicos (sprite: 48x48 en geo()).
-async function puntoCanvas(page: Page, f: (w: number, h: number) => [number, number]): Promise<[number, number]> {
+async function puntoCanvas(page: Page, f: (w: number, h: number, x: number) => [number, number]): Promise<[number, number]> {
   return page.evaluate((fuente) => {
     const c = document.querySelector('canvas[role="img"]') as HTMLCanvasElement;
     const r = c.getBoundingClientRect();
     const s = Number(c.dataset.escala);
     const W = c.width / s;
     const H = c.height / s;
-    const [lx, ly] = (new Function('w', 'h', `return (${fuente})(w, h)`) as (w: number, h: number) => [number, number])(W, H);
+    const [lx, ly] = (new Function('w', 'h', 'x', `return (${fuente})(w, h, x)`) as (w: number, h: number, x: number) => [number, number])(W, H, Number(c.dataset.x));
     return [r.left + (lx / W) * r.width, r.top + (ly / H) * r.height] as [number, number];
   }, f.toString());
 }
 
 test('tocar a Clarita en el canvas acaricia', async ({ page }) => {
   await abrir(page, diversionBaja);
-  const sprX = Number(await page.locator('canvas[role="img"]').getAttribute('data-x'));
-  const [x, y] = await puntoCanvas(page, new Function(`return (_w, h) => [${sprX} + 24, Math.floor(h * 0.84) - 45 + 24]`)() as (w: number, h: number) => [number, number]);
+  const [x, y] = await puntoCanvas(page, (_w, h, x) => [x + 24, Math.floor(h * 0.84) - 45 + 24]);
   await page.mouse.click(x, y);
   expect(await valor(page, 'Diversión')).toBeGreaterThan(20);
 });

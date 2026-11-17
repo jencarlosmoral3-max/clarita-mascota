@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { agregarParticulas, avanzar, pasoParticulas, type Particula } from '../../src/escena/comportamiento';
-import { ANIM_MAX_TICKS_POR_VUELTA, ANIM_TICK_MS, FX_MAX } from '../../src/logica/balance';
+import { ANIM_MAX_TICKS_POR_VUELTA, ANIM_TICK_MS, FX_MAX, FX_PELOTA } from '../../src/logica/balance';
 
 describe('avanzar', () => {
   it('dt 0: sin ticks', () => expect(avanzar(0, 0)).toEqual([0, 0]));
@@ -34,6 +34,31 @@ describe('pasoParticulas', () => {
   it('rebota en el suelo invirtiendo vy', () => {
     const [a] = pasoParticulas([p({ k: 'ball', y: 99, vy: 2, g: 0, rebota: true })], 100);
     expect(a).toMatchObject({ y: 100, vy: -2 });
+  });
+  it('rebote con gravedad: la altura de cada bote no supera la del anterior', () => {
+    let l: Particula[] = [p({ k: 'ball', x: 0, y: 100, vx: 0, vy: FX_PELOTA.vy, g: FX_PELOTA.g, vida: FX_PELOTA.vida, rebota: true })];
+    const alturas: number[] = [];
+    let min = 100;
+    while (l[0]) {
+      const y = l[0].y;
+      l = pasoParticulas(l, 100);
+      if (!l[0]) break;
+      min = Math.min(min, l[0].y);
+      if (l[0].y === 100 && y < 100) {
+        alturas.push(100 - min);
+        min = 100;
+      }
+    }
+    expect(alturas.length).toBeGreaterThanOrEqual(2);
+    for (let i = 1; i < alturas.length; i++) expect(alturas[i]).toBeLessThanOrEqual(alturas[i - 1] as number);
+  });
+  it('espera: no se mueve ni envejece, solo descuenta', () => {
+    const q = p({ espera: 2 });
+    const [a] = pasoParticulas([q], 100);
+    expect(a).toEqual({ ...q, espera: 1 });
+    const [b] = pasoParticulas([a as Particula], 100);
+    expect(b).toMatchObject({ x: 10, y: 20, vida: 3, espera: 0 });
+    expect(pasoParticulas([b as Particula], 100)[0]).toMatchObject({ x: 11, y: 18, vida: 2 });
   });
   it('sin rebota atraviesa el suelo; con tope se detiene', () => {
     expect(pasoParticulas([p({ y: 99, vy: 2, g: 0 })], 100)[0]?.y).toBe(101);

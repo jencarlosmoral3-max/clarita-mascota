@@ -51,8 +51,9 @@ function pintarIcono(c: HTMLCanvasElement, nombre: Icono, color: string): void {
   );
 }
 
-// Reinicia una animación CSS por clase y la limpia al terminar (con movimiento reducido no hay animationend: la clase queda inerte).
+// Reinicia una animación CSS por clase y la limpia al terminar (con movimiento reducido no se anima).
 function animar(e: HTMLElement, clase: string): void {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; // sin animationend: no acumular listeners ni dejar la clase
   e.classList.remove(clase);
   void e.offsetWidth;
   e.classList.add(clase);
@@ -156,7 +157,9 @@ export function crearInterfaz(app: HTMLElement, alAccionar: (a: Accion) => void)
         m.cuadros.forEach((c, i) => c.classList.toggle('on', i < encendidas));
         m.celdas.setAttribute('aria-valuenow', String(v));
         m.valor.textContent = `${v}%`;
-        m.valor.classList.toggle('bajo', m.clave !== 'carino' && v < UMBRAL_TRISTE);
+        const bajo = m.clave !== 'carino' && v < UMBRAL_TRISTE;
+        m.celdas.setAttribute('aria-valuetext', bajo ? `${v}%, bajo` : `${v}%`);
+        m.valor.classList.toggle('bajo', bajo);
         pintarIcono(m.ico, m.ic, tinta);
       }
       for (const bt of botones) {

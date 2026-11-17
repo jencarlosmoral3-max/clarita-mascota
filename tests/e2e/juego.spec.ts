@@ -178,17 +178,28 @@ test('Alimentar anima la interfaz y el medidor sube', async ({ page }) => {
   await page.getByRole('button', { name: 'Alimentar' }).click();
   await expect.poll(() => animaciones(page)).toBeGreaterThan(0);
   expect(await valor(page, 'Comida')).toBe(100);
+  const barra = page.getByRole('progressbar', { name: 'Comida' });
+  await expect(barra).toHaveAttribute('aria-valuetext', '100%');
+});
+
+test('el medidor bajo lo dice en aria-valuetext', async ({ page }) => {
+  await abrir(page, comidaBaja);
+  await expect(page.getByRole('progressbar', { name: 'Comida' })).toHaveAttribute('aria-valuetext', '20%, bajo');
+  await expect(page.getByRole('progressbar', { name: 'Energía' })).toHaveAttribute('aria-valuetext', '80%');
 });
 
 test('los efectos se acumulan y desaparecen', async ({ page }) => {
+  await page.clock.install(); // el tiempo solo avanza con runFor: sin carreras
   await abrir(page, diversionBaja);
   const canvas = page.getByRole('img', { name: /Clarita/ });
   const fx = async () => Number(await canvas.getAttribute('data-fx'));
   await page.getByRole('button', { name: 'Bañar' }).click();
   const uno = await fx();
+  expect(uno).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Acariciar' }).click();
-  await expect.poll(fx).toBeGreaterThan(uno);
-  await expect.poll(fx, { timeout: 4000 }).toBe(0);
+  expect(await fx()).toBeGreaterThan(uno);
+  await page.clock.runFor(4000);
+  await expect.poll(fx).toBe(0);
 });
 
 test.describe('movimiento reducido', () => {

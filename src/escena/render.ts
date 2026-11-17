@@ -69,7 +69,6 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
   let acum = 0;
   let sprX = 0;
   let fx: Particula[] = [];
-  let fxKind: EfectoAccion | undefined; // último efecto: solo decide el vaivén del cuerpo
   let quitar = 0;
 
   const geo = (laguna_: boolean) => {
@@ -172,7 +171,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     const an = animo(estado).animacion;
     const secuencia = SEQ[an];
     sprX = sx;
-    const bob = fx.length > 0 && (fxKind === 'alimentar' || fxKind === 'jugar') && (an === 'reposo' || an === 'triste');
+    const bob = fx.some((f) => f.k === 'ball' || f.k === 'bone') && (an === 'reposo' || an === 'triste');
     const frame: Frame = bob ? (Math.floor(t / ANIM_BOB_TICKS) % 2 ? 'idle1' : 'idle0') : frameEn(secuencia, t);
     if (lugar === 'dormitorio') blit(loCtx, PLUSH, PLUSH_PAL, sprX - 9, base - 6);
     if (pal?.pijama !== estado.pijama) pal = { pijama: estado.pijama, p: paletaSprite(estado.pijama) };
@@ -195,7 +194,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     }
     if (sc) loCtx.drawImage(sc, sprX, sy);
     else blit(loCtx, SP[frame], pal.p, sprX, sy);
-    for (const f of fx) blit(loCtx, FX[f.k], FXP, Math.round(f.x), Math.round(f.y));
+    for (const f of fx) if (!f.espera) blit(loCtx, FX[f.k], FXP, Math.round(f.x), Math.round(f.y));
     if (an === 'dormida') {
       const p = Math.floor(t / ANIM_Z_TICKS) % 3;
       for (let i = 0; i < 3; i++) blit(loCtx, FX.z, FXP, sprX + 36 + i * 5, sy + 8 - ((p + i) % 3) * 6);
@@ -328,20 +327,20 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
         for (let i = 0; i < FX_BURBUJA.n; i++) add('bubble', sx + 6 + i * 5, sy + 30 - (i % 3) * 8, 0, FX_BURBUJA.vy, 0, FX_BURBUJA.vida);
         for (let i = 0; i < FX_GOTA.n; i++) {
           const lado = i % 2 ? 1 : -1;
-          add('gota', sx + 22 + lado * 14, sy + 30, lado * (FX_GOTA.vx + (i >> 1) * 0.4), FX_GOTA.vy - (i % 3) * 0.5, FX_GOTA.g, FX_GOTA.vida);
+          add('gota', sx + 22 + lado * 14, sy + 30, lado * (FX_GOTA.vx + (i >> 1) * FX_GOTA.dvx), FX_GOTA.vy - (i % 3) * FX_GOTA.dvy, FX_GOTA.g, FX_GOTA.vida);
         }
       }
       if (tipo === 'alimentar') {
-        add('bone', sx + 20, q ? sy + FX_HUESO.topeDy : sy - 8, 0, FX_HUESO.vy, 0, FX_HUESO.vida, { tope: sy + FX_HUESO.topeDy });
-        for (let i = 0; i < FX_MIGA.n; i++) add('miga', sx + 22, sy + 26, (i - (FX_MIGA.n - 1) / 2) * FX_MIGA.vx, FX_MIGA.vy - (i % 2) * 0.8, FX_MIGA.g, FX_MIGA.vida);
+        const llega = Math.ceil((FX_HUESO.topeDy - FX_HUESO.desdeDy) / FX_HUESO.vy); // ticks que tarda el hueso en llegar a la boca
+        add('bone', sx + 20, sy + (q ? FX_HUESO.topeDy : FX_HUESO.desdeDy), 0, FX_HUESO.vy, 0, FX_HUESO.vida, { tope: sy + FX_HUESO.topeDy });
+        for (let i = 0; i < FX_MIGA.n; i++) add('miga', sx + 22, sy + FX_MIGA.dy, (i - (FX_MIGA.n - 1) / 2) * FX_MIGA.vx, FX_MIGA.vy - (i % 2) * FX_MIGA.dvy, FX_MIGA.g, FX_MIGA.vida, { espera: q ? 0 : llega });
       }
       if (tipo === 'jugar') {
         add('ball', sx + 38, base - 6, FX_PELOTA.vx, q ? 0 : FX_PELOTA.vy, FX_PELOTA.g, FX_PELOTA.vida, { rebota: true });
         estrellas();
       }
       clearTimeout(quitar);
-      fxKind = tipo;
-      fx = agregarParticulas(fx, nuevas);
+      fx = q ? nuevas : agregarParticulas(fx, nuevas); // reducido: nada avanza, la lista se reemplaza
       dibujar();
       if (q) {
         quitar = window.setTimeout(() => {

@@ -31,3 +31,10 @@ export const ANIM_MAX_TICKS_POR_VUELTA = 3;
 export const ANIM_TICKS_POR_PASO_ANTIGUO = 3;
 export const FX_QUITAR_MS = 1500; // con movimiento reducido, el efecto estático se borra a los 1,5 s
 export const FX_VIDA_TICKS = 18;
+export const NUBES_TICKS_POR_PX = 10; // deriva: 1 px cada 10 ticks (1 s)
+export const TITILEO_PERIODO_TICKS = 6; // estrellas: cada 0,6 s cambia la fase
+export const TITILEO_FASES = 5; // cada estrella se apaga 1 fase de cada 5
+export const DESTELLO_PERIODO_TICKS = 5; // ondas del agua
+export const DESTELLO_UNO_DE_CADA = 3; // una de cada 3 ondas del agua es destello (por hash, no por columnas)
+export const DESTELLO_FASES = 6; // cada onda brilla 1 fase de cada 6
+export const TRANSICION_TICKS_POR_PASO = 1; // 4 pasos de dither = 4 ticks

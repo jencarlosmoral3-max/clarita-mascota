@@ -1,8 +1,20 @@
-import { dormitorio, laguna } from '../arte/fondos';
+import { dormitorio, esCielo, laguna, mascaraDither, nubes, type Nube } from '../arte/fondos';
 import { FXP, PLUSH_PAL, SCN, paletaSprite } from '../arte/paleta';
 import { FX, PLUSH, SEQ, SP, frameEn, type Efecto, type Frame, type Grilla } from '../arte/sprites';
 import { animo } from '../logica/animo';
-import { ANIM_TICKS_POR_PASO_ANTIGUO as K, ANIM_TICK_MS, FX_QUITAR_MS, FX_VIDA_TICKS } from '../logica/balance';
+import {
+  ANIM_TICKS_POR_PASO_ANTIGUO as K,
+  ANIM_TICK_MS,
+  DESTELLO_FASES,
+  DESTELLO_UNO_DE_CADA,
+  DESTELLO_PERIODO_TICKS,
+  FX_QUITAR_MS,
+  FX_VIDA_TICKS,
+  NUBES_TICKS_POR_PX,
+  TITILEO_FASES,
+  TITILEO_PERIODO_TICKS,
+  TRANSICION_TICKS_POR_PASO,
+} from '../logica/balance';
 import type { Estado } from '../logica/estado';
 import { esDeNoche } from '../logica/tiempo';
 import { avanzar } from './comportamiento';
@@ -11,6 +23,9 @@ export type EfectoAccion = 'alimentar' | 'jugar' | 'banar' | 'acariciar';
 
 const ANCHO_MIN = 96; // píxeles lógicos de ancho (el sprite mide 48): en un iPhone de 3x da el mismo encuadre que el mock
 const ALTO_MIN = 56; // el sprite (48) más aire arriba; si la escena es baja, la escala baja
+
+type Brillo = [x: number, y: number, fase: number, alt: number]; // alt: índice de paleta al que cambia
+type Fondo = { clave: string; lugar: string; c: HTMLCanvasElement; estrellas: Brillo[]; agua: Brillo[]; cielo?: Uint8Array; nubes?: Nube[] }; // cielo/nubes: solo la laguna
 
 type Particula = { k: Efecto; x: number; y: number; vy: number };
 
@@ -30,7 +45,11 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
   const loCtx = lo.getContext('2d');
   const reducir = matchMedia('(prefers-reduced-motion: reduce)');
   // Solo la última entrada de cada cosa: fondo ya pintado y paleta del sprite.
-  let fondo: { clave: string; c: HTMLCanvasElement } | undefined;
+  let fondo: Fondo | undefined;
+  // Píxeles del fondo anterior y del nuevo (leídos una vez) y el búfer de mezcla; solo mientras dura la transición.
+  let trans: { viejo: Uint8ClampedArray; nuevo: Uint8ClampedArray; out: ImageData } | undefined;
+  let paso = 0; // transición dither: 0 = ninguna, 1..4
+  let pasoTicks = 0;
   let pal: { pijama: boolean; p: string[] } | undefined;
   const sprites = new Map<string, HTMLCanvasElement>(); // frame|pijama ya pintado en 48x48
 
@@ -69,14 +88,83 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
       if (!fctx) return;
       const g = (lugar === 'laguna' ? laguna : dormitorio)(W, H);
       const bp = SCN[lugar][momento];
+      const estrellas: Brillo[] = [];
+      const agua: Brillo[] = [];
+      const cielo = lugar === 'laguna' ? new Uint8Array(W * H) : undefined;
       for (let y = 0; y < H; y++)
         for (let x = 0; x < W; x++) {
-          fctx.fillStyle = bp[g[y * W + x] ?? 0] ?? '#000';
+          const v = g[y * W + x] ?? 0;
+          fctx.fillStyle = bp[v] ?? '#000';
           fctx.fillRect(x, y, 1, 1);
+          if (cielo && esCielo(v)) cielo[y * W + x] = 1;
+          const estrella = lugar === 'laguna' ? v === 18 || v === 21 : v === 17 || v === 18;
+          // La estrella se apaga al color del cielo vecino; la onda destella al tono claro 15.
+          if (momento === 'night' && estrella) {
+            // Vecino de cielo de degradado más cercano en la misma fila (izquierda primero); sin él, la estrella no titila.
+            const fondoCielo = (n: number) => (lugar === 'laguna' ? n <= 3 : n === 16);
+            let alt = -1;
+            for (let d = 1; alt < 0 && (x - d >= 0 || x + d < W); d++) {
+              if (x - d >= 0 && fondoCielo(g[y * W + x - d] ?? 99)) alt = g[y * W + x - d] ?? -1;
+              else if (x + d < W && fondoCielo(g[y * W + x + d] ?? 99)) alt = g[y * W + x + d] ?? -1;
+            }
+            if (alt >= 0) estrellas.push([x, y, (x * 31 + y * 17) % TITILEO_FASES, alt]);
+          } else if (lugar === 'laguna' && v === 11 && ((Math.imul(x, 73856093) ^ Math.imul(y, 19349663)) >>> 0) % DESTELLO_UNO_DE_CADA === 0) agua.push([x, y, (x * 31 + y * 17) % DESTELLO_FASES, 15]);
         }
-      fondo = { clave, c };
+      const viejo = fondo && fondo.lugar !== lugar && !reducir.matches && !document.hidden && fondo.c.width === W && fondo.c.height === H ? fondo.c.getContext('2d')?.getImageData(0, 0, W, H) : undefined;
+      const nuevo = viejo ? fctx.getImageData(0, 0, W, H) : undefined;
+      if (viejo && nuevo) {
+        trans = { viejo: viejo.data, nuevo: nuevo.data, out: new ImageData(W, H) };
+        paso = 1;
+        pasoTicks = 0;
+      } else {
+        paso = 0;
+        trans = undefined;
+      }
+      fondo = { clave, lugar, c, estrellas, agua, cielo, nubes: cielo && nubes(W, H) };
     }
-    loCtx.drawImage(fondo.c, 0, 0);
+    // Reducido: t no avanza y todo queda como en el fondo original (nubes en su sitio, sin titileo).
+    const tt = reducir.matches ? 0 : t;
+    const dx = Math.floor(tt / NUBES_TICKS_POR_PX);
+    canvas.dataset.nubes = String(dx);
+    canvas.dataset.transicion = String(paso);
+    if (paso && trans) {
+      // Mezcla dither (W×H) solo durante los 4 ticks de la transición; los píxeles ya están leídos.
+      const { viejo, nuevo, out } = trans;
+      for (let y = 0; y < H; y++)
+        for (let x = 0; x < W; x++) {
+          const src = mascaraDither(x, y, paso) ? nuevo : viejo;
+          for (let k = 0, i = (y * W + x) * 4; k < 4; k++) out.data[i + k] = src[i + k] ?? 0;
+        }
+      loCtx.putImageData(out, 0, 0);
+    } else {
+      loCtx.drawImage(fondo.c, 0, 0);
+      const bp = SCN[lugar][momento];
+      if (fondo.cielo && fondo.nubes) {
+        // Píxel a píxel y solo sobre cielo: las montañas y la orilla tapan la nube.
+        loCtx.fillStyle = bp[19] ?? '#fff';
+        for (const n of fondo.nubes)
+          for (const [rx, ry, w] of n.rects) {
+            const y = n.y + ry;
+            if (y < 0 || y >= H) continue;
+            for (let i = 0; i < w; i++) {
+              const x = (((n.x + rx + dx + i) % W) + W) % W; // envoltura sin salto
+              if (fondo.cielo[y * W + x]) loCtx.fillRect(x, y, 1, 1);
+            }
+          }
+      }
+      const brillar = (lista: Brillo[], periodo: number, fases: number) => {
+        const f = Math.floor(tt / periodo);
+        for (const [x, y, s, alt] of lista)
+          if ((f + s) % fases === 0) {
+            loCtx.fillStyle = bp[alt] ?? '#000';
+            loCtx.fillRect(x, y, 1, 1);
+          }
+      };
+      if (!reducir.matches) {
+        brillar(fondo.estrellas, TITILEO_PERIODO_TICKS, TITILEO_FASES);
+        brillar(fondo.agua, DESTELLO_PERIODO_TICKS, DESTELLO_FASES);
+      }
+    }
 
     const { sx, sy, base } = geo(lugar === 'laguna');
     const an = animo(estado).animacion;
@@ -141,6 +229,13 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
 
   function tick(): void {
     t++;
+    if (paso && ++pasoTicks >= TRANSICION_TICKS_POR_PASO) {
+      pasoTicks = 0;
+      if (++paso > 4) {
+        paso = 0;
+        trans = undefined;
+      }
+    }
     if (fxVida > 0) {
       fxVida--;
       fxT++;
@@ -190,6 +285,8 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
   function arrancar(): void {
     pararReloj();
     limpiarFx();
+    paso = 0;
+    trans = undefined;
     if (!reducir.matches && !document.hidden) arrancarReloj();
     dibujar();
   }

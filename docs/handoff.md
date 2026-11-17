@@ -14,7 +14,7 @@
 | H3 lógica y guardado | Cerrado, PR #2 |
 | H2 elección | CTO eligió **B** (48×48) el 2026-11-16; mock en `mocks/propuesta-b.html` |
 | H4 render | Cerrado, PR #5 |
-| H5 UI e integración | Cerrado, PR #5. Falta gate de UI (`web-design-guidelines`, `impeccable audit`) |
+| H5 UI e integración | Cerrado, PR #5. Gate de UI corrido en M4 (PR #14) |
 | H6 iconos, actualización, entrega | Iconos cerrados, PR #9. Falta prueba de actualización y checklist en iPhone real |
 
 ## Plan activo: animaciones y dinamismo
@@ -28,7 +28,7 @@ arte con vista previa antes de integrar.
 | M1 motor (reloj 100 ms, SEQ con duración, sprites cacheados) | Cerrado, PR #12 |
 | M2 arte por parches + vista previa | En curso, rama `m2-arte`. Compuerta: aprobación del CTO |
 | M3 escenario vivo | Cerrado, PR #13 |
-| M4 interfaz y partículas | En curso, rama `m4-interfaz` |
+| M4 interfaz y partículas | Cerrado, PR #14. Incluye el gate de UI pendiente desde H5 |
 | M5 comportamiento integrado | No iniciado. Depende de M2 aprobado |
 
 ### M1 motor (PR #12)
@@ -48,8 +48,8 @@ arte con vista previa antes de integrar.
 
 ### M2 arte (en espera del CTO)
 
-- Commit `569e7e5` en rama local `m2-arte` (worktree `.claude/worktrees/agent-a673d69fb0facf65c`),
-  sin push. Salió de `m1-motor` antes del squash: necesita rebase sobre `main`.
+- Rama local `m2-arte` (worktree `.claude/worktrees/agent-a673d69fb0facf65c`), sin push, ya
+  rebasada sobre `main` tras M4 (`bf01ee5`): typecheck, 164 unit, build y 25 e2e pasan.
 - Vista previa publicada: https://claude.ai/artifact/RLJNXzwGKt55ddg3fEjjDk (se regenera con
   `npm run vista-previa` en esa rama).
 - Juicio del chairman: bien cola, mirar, feliz, comer; flojas rascarse, trote, peluche, bostezo.
@@ -68,12 +68,33 @@ arte con vista previa antes de integrar.
   e2e frágil, nubes delante de montañas). Rechazado: nubes ausentes durante los 4 pasos.
 - No verificado: titileo en movimiento, rendimiento en iPhone. Codex: no verificado.
 
+### M4 interfaz y partículas (PR #14)
+
+- Partículas `{k, x, y, vx, vy, g, vida, rebota?, tope?, espera?}` en `src/escena/comportamiento.ts`
+  (`pasoParticulas`, `agregarParticulas`, tope 40). Los efectos se acumulan y salen de `sprX`.
+  Nuevas: migas (esperan a que el hueso llegue a la boca), gotas, estrellitas.
+- Interfaz: tecla de 2 px, pop del icono, celdas escalonadas al subir, entrada de frase, pulso del
+  corazón. Duraciones en variables `--t-*` de `estilos.css`.
+- **Gate de UI** (`web-design-guidelines` + `impeccable audit`, con mediciones en WebKit iPhone 13):
+  sin bloqueantes. Contraste 5,3–17:1; botones 114×59 px; foco y orden de Tab correctos; sin scroll
+  horizontal. Corregido: botón deshabilitado de 2,84:1 a 5,61:1 (día) y 6,30:1 (noche);
+  `aria-valuetext` con "bajo"; selector muerto. Anotado sin tocar: fuente 13–14 px, `theme-color`
+  fijo, frase con `nowrap`, aviso doble al lector de pantalla. El detector automático de
+  `impeccable` no se corrió.
+- `/code-review`: aplicados 8 hallazgos (rebote que ganaba energía, migas antes del hueso, vaivén
+  atado al último efecto, listeners y efectos apilados con movimiento reducido, números sueltos,
+  e2e frágil). Rechazado: reflow por celda.
+- Verificado: typecheck, 100/100 unit, build, 25/25 e2e, CI verde. En vivo tras el deploy de
+  `171c989`: nubes derivan, Bañar da 14 partículas, `aria-valuetext` presente, sin errores de consola.
+- Observación: el hueso crema se confunde con la barbita al llegar a la boca.
+- No verificado: movimiento en iPhone real, VoiceOver, Dynamic Type. Codex: no verificado.
+
 ## Estado (2026-11-16)
 
 - **El juego es jugable en local**: `npm run dev` (en escritorio se juega directo; en iPhone sin
   instalar muestra la pantalla de instalación). Medidores, 6 acciones, tocar a Clarita, pijama,
   día/noche, dormitorio al dormir, animación y efectos, guardado local, offline.
-- `main` verificado: `npm run typecheck` limpio, `npm test` 93/93, `npm run e2e` 21/21 (WebKit,
+- `main` verificado: `npm run typecheck` limpio, `npm test` 100/100, `npm run e2e` 25/25 (WebKit,
   perfil iPhone 13).
 - Repo: GitHub público `jencarlosmoral3-max/clarita-mascota`. `gh` y `git push/fetch` se corren con
   `GH_TOKEN=$(gh auth token -u jencarlosmoral3-max)`; la cuenta activa global de `gh` sigue siendo
@@ -108,8 +129,9 @@ arte con vista previa antes de integrar.
 
 Prueba en el iPhone real (pendiente 1) y prueba de actualización del service worker: con la app
 instalada, mergear cualquier cambio visible y comprobar que al volver de segundo plano carga la
-versión nueva sin perder la partida. Antes de entregar: gate de UI (`web-design-guidelines`,
-`impeccable audit`) y Codex sobre `src/`.
+versión nueva sin perder la partida. Antes de entregar: Codex sobre `src/`.
+
+Plan de animaciones: falta que el CTO apruebe la vista previa de M2; después M5.
 
 ## H6 iconos (2026-11-16, PR #9)
 

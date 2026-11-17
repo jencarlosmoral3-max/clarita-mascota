@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { SP } from '../../src/arte/sprites';
+import { SEQ, SP } from '../../src/arte/sprites';
 import { agregarParticulas, avanzar, crear, mulberry32, paso, pasoParticulas, reaccionar, vista, type Comp, type Entorno, type Particula } from '../../src/escena/comportamiento';
-import { ANIM_MAX_TICKS_POR_VUELTA, ANIM_TICK_MS, FX_MAX, FX_PELOTA, OCIO_MAX_SIN_CAMINAR } from '../../src/logica/balance';
+import { ANIM_MAX_TICKS_POR_VUELTA, ANIM_TICK_MS, FX_HUESO, FX_MAX, FX_PELOTA, OCIO_CAMINAR_MIN_PX, OCIO_MAX_SIN_CAMINAR } from '../../src/logica/balance';
 
 describe('avanzar', () => {
   it('dt 0: sin ticks', () => expect(avanzar(0, 0)).toEqual([0, 0]));
@@ -171,5 +171,59 @@ describe('comportamiento', () => {
     vi.doUnmock('../../src/logica/balance');
     expect(vistas.has('rascarse')).toBe(false);
     expect(vistas.has('cola')).toBe(true);
+  });
+});
+
+describe('reacciones sincronizadas con las partículas', () => {
+  const dur = (s: keyof typeof SEQ) => SEQ[s].reduce((a, p) => a + p.t, 0);
+  it('comer: espera al hueso, mastica un rato y termina con él', () => {
+    const llega = Math.ceil((FX_HUESO.topeDy - FX_HUESO.desdeDy) / FX_HUESO.vy);
+    expect(dur('comer')).toBeGreaterThanOrEqual(llega + 4);
+    expect(dur('comer')).toBeLessThanOrEqual(FX_HUESO.vida + 2);
+    expect(SEQ.comer.filter((p) => p.f === 'comerAbierta').length).toBeGreaterThan(0);
+    let t = 0;
+    for (const p of SEQ.comer) {
+      if (t < llega) expect(p.f).not.toBe('comerAbierta'); // mientras cae, no mastica
+      t += p.t;
+    }
+  });
+  it('jugar dura lo que la pelota', () => expect(Math.abs(dur('jugar') - FX_PELOTA.vida)).toBeLessThanOrEqual(4));
+});
+
+describe('cambio de ánimo durante una reacción', () => {
+  const E: Entorno = { animacion: 'reposo', xmin: 4, xmax: 44 };
+  const rng = mulberry32(3);
+  it('no la corta: termina y pasa al ánimo nuevo', () => {
+    let c = reaccionar(crear(24), 'alimentar');
+    c = paso(c, { ...E, animacion: 'triste' }, rng);
+    expect(c.modo).toBe('reaccion');
+    expect(c.anim).toBe('triste');
+    expect(vista(c).anim).toBe('comer');
+    while (c.modo === 'reaccion') c = paso(c, { ...E, animacion: 'triste' }, rng);
+    expect(vista(c).anim).toBe('triste');
+  });
+  it('dormida sí la interrumpe', () => {
+    const c = paso(reaccionar(crear(24), 'alimentar'), { ...E, animacion: 'dormida' }, rng);
+    expect(c.modo).toBe('bostezo');
+  });
+});
+
+describe('paseos', () => {
+  it('con rango estrecho, pocos paseos acaban pegados al borde', () => {
+    const e: Entorno = { animacion: 'reposo', xmin: 4, xmax: 44 };
+    const rng = mulberry32(11);
+    let c = crear(24);
+    let paseos = 0;
+    let bordes = 0;
+    while (paseos < 200) {
+      const n = paso(c, e, rng);
+      if (c.seq !== 'caminar' && n.seq === 'caminar') {
+        paseos++;
+        if (n.dest === e.xmin || n.dest === e.xmax) bordes++;
+        expect(Math.abs(n.dest - c.x)).toBeGreaterThanOrEqual(OCIO_CAMINAR_MIN_PX);
+      }
+      c = n;
+    }
+    expect(bordes / paseos).toBeLessThan(0.3);
   });
 });

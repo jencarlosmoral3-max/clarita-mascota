@@ -447,13 +447,6 @@ export const PARCHES = {
     '43444-------44433',
     '43444-------44433',
   ] },
-  bocaAbierta: { x: 21, y: 22, filas: [
-    '-------',
-    '-1ccc1-',
-    '-1nnn1-',
-    '--nnn--',
-    '---n---',
-  ] },
   bocaAbierta1: { x: 21, y: 23, filas: [
     '-------',
     '-1ccc1-',
@@ -735,19 +728,23 @@ export const SEQ: Record<SeqNombre, readonly Paso[]> = {
   cola: rep(6, [{ f: 'colaA', t: 1 }, { f: 'colaB', t: 1 }]),
   mirar: [{ f: 'miraI', t: 8 }, { f: 'idle0', t: 3 }, { f: 'miraD', t: 8 }],
   rascarse: [{ f: 'sentada', t: 2 }, ...rep(5, [{ f: 'rascaA', t: 1 }, { f: 'rascaB', t: 1 }]), { f: 'sentada', t: 2 }],
-  comer: rep(4, [{ f: 'comerAbierta', t: 2 }, { f: 'idle1', t: 2 }]),
-  jugar: rep(2, [{ f: 'jugar', t: 2 }, { f: 'jugar', t: 2, dy: -2 }, { f: 'jugar', t: 2 }, { f: 'jugar', t: 2, dy: -2 }]),
+  // Espera 16 ticks mientras cae el hueso y mastica 10 con el hueso en la boca y las migas (FX_HUESO / FX_MIGA).
+  comer: [{ f: 'idle1', t: 16 }, ...rep(3, [{ f: 'comerAbierta', t: 2 }, { f: 'idle1', t: 1 }]), { f: 'idle1', t: 1 }],
+  jugar: rep(3, [{ f: 'jugar', t: 2 }, { f: 'jugar', t: 2, dy: -2 }, { f: 'jugar', t: 2 }, { f: 'jugar', t: 2, dy: -2 }]),
   sacudirse: [...rep(2, [{ f: 'sacudeI', t: 2, dx: -1 }, { f: 'blink', t: 1 }, { f: 'sacudeD', t: 2, dx: 1 }, { f: 'blink', t: 1 }]), { f: 'blink', t: 2 }],
   feliz: rep(7, [{ f: 'felizA', t: 1 }, { f: 'felizB', t: 1 }]),
   bostezo: [{ f: 'sleep0', t: 3 }, { f: 'bostezo', t: 8 }, { f: 'sleep0', t: 3 }],
 };
 
-export function frameEn(seq: readonly Paso[], tick: number): Frame {
+// El paso de la secuencia que toca en ese tick (el ciclo se repite).
+export function pasoEn(seq: readonly Paso[], tick: number): Paso {
   const total = seq.reduce((a, p) => a + p.t, 0);
   let r = total > 0 ? ((tick % total) + total) % total : 0;
   for (const p of seq) {
-    if (r < p.t) return p.f;
+    if (r < p.t) return p;
     r -= p.t;
   }
-  return seq[0]?.f ?? 'idle0';
+  return seq[0] ?? { f: 'idle0', t: 1 };
 }
+
+export const frameEn = (seq: readonly Paso[], tick: number): Frame => pasoEn(seq, tick).f;

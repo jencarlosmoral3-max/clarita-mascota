@@ -1,6 +1,6 @@
 import { dormitorio, esCielo, laguna, mascaraDither, nubes, type Nube } from '../arte/fondos';
 import { FXP, PLUSH_PAL, SCN, paletaSprite } from '../arte/paleta';
-import { FX, PLUSH, SEQ, SP, type Grilla } from '../arte/sprites';
+import { FX, PLUSH, SP, type Grilla } from '../arte/sprites';
 import { animo } from '../logica/animo';
 import {
   ANIM_TICK_MS,
@@ -24,7 +24,7 @@ import {
 } from '../logica/balance';
 import type { Estado } from '../logica/estado';
 import { esDeNoche } from '../logica/tiempo';
-import { agregarParticulas, avanzar, crear, paso as pasoComp, pasoParticulas, reaccionar, vista, type Comp, type Particula, type Reaccion } from './comportamiento';
+import { agregarParticulas, avanzar, crear, fijar, paso as pasoComp, pasoParticulas, reaccionar, vista, type Comp, type Particula, type Reaccion } from './comportamiento';
 
 export type EfectoAccion = Reaccion;
 
@@ -34,10 +34,12 @@ const ALTO_MIN = 56; // el sprite (48) más aire arriba; si la escena es baja, l
 type Brillo = [x: number, y: number, fase: number, alt: number]; // alt: índice de paleta al que cambia
 type Fondo = { clave: string; lugar: string; c: HTMLCanvasElement; estrellas: Brillo[]; agua: Brillo[]; cielo?: Uint8Array; nubes?: Nube[] }; // cielo/nubes: solo la laguna
 
-function blit(ctx: CanvasRenderingContext2D, g: Grilla, pal: readonly string[], ox: number, oy: number): void {
+const SOMBRA = 22; // índice de paleta de la sombra del suelo: no sube con el cuerpo
+
+function blit(ctx: CanvasRenderingContext2D, g: Grilla, pal: readonly string[], ox: number, oy: number, capa?: (v: number) => boolean): void {
   g.forEach((fila, y) =>
     fila.forEach((v, x) => {
-      if (!v) return;
+      if (!v || (capa && !capa(v))) return;
       ctx.fillStyle = pal[v] ?? '#000';
       ctx.fillRect(ox + x, oy + y, 1, 1);
     }),
@@ -177,7 +179,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     // Si el ánimo cambió desde el último tick (Dormir/Despertar), se adelanta ya: sin un cuadro con la x vieja.
     if (comp.anim !== an) comp = pasoComp(comp, { animacion: an, ...rango() }, Math.random);
     // Reducido: quieta en el centro con el frame base de su ánimo.
-    const v = reducir.matches ? { frame: SEQ[an][0]?.f ?? 'idle0', x: sx, dx: 0, dy: 0, espejo: false, anim: an } : vista(comp);
+    const v = vista(reducir.matches ? crear(sx, an) : comp);
     sprX = v.x;
     const frame = v.frame;
     if (lugar === 'dormitorio') blit(loCtx, PLUSH, PLUSH_PAL, sprX - 9, base - 6);
@@ -186,28 +188,32 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     canvas.dataset.fx = String(fx.length);
     canvas.dataset.x = String(sprX);
     canvas.dataset.anim = v.anim;
-    const ck = `${frame}|${estado.pijama}`;
-    let sc = sprites.get(ck);
-    if (!sc) {
-      sc = document.createElement('canvas');
-      sc.width = 48;
-      sc.height = 48;
-      const sctx = sc.getContext('2d');
-      if (sctx) {
-        blit(sctx, SP[frame], pal.p, 0, 0);
-        sprites.set(ck, sc);
-      } else {
-        sc = undefined;
+    // Dos capas cacheadas: el cuerpo sube con dy y la sombra se queda en el suelo.
+    const poner = (sombra: boolean, dy: number) => {
+      const ck = `${frame}|${estado?.pijama}|${sombra}`;
+      const capa = (c: number) => (c === SOMBRA) === sombra;
+      let sc = sprites.get(ck);
+      if (!sc) {
+        const nuevo = document.createElement('canvas');
+        nuevo.width = 48;
+        nuevo.height = 48;
+        const sctx = nuevo.getContext('2d');
+        if (sctx && pal) {
+          blit(sctx, SP[frame], pal.p, 0, 0, capa);
+          sprites.set(ck, (sc = nuevo));
+        }
       }
-    }
-    if (sc && v.espejo) {
+      if (!sc) return pal && blit(loCtx, SP[frame], pal.p, sprX + v.dx, sy + dy, capa);
       loCtx.save();
-      loCtx.translate(sprX + v.dx + 48, sy + v.dy);
-      loCtx.scale(-1, 1);
-      loCtx.drawImage(sc, 0, 0);
+      if (v.espejo) {
+        loCtx.translate(sprX + v.dx + 48, sy + dy);
+        loCtx.scale(-1, 1);
+        loCtx.drawImage(sc, 0, 0);
+      } else loCtx.drawImage(sc, sprX + v.dx, sy + dy);
       loCtx.restore();
-    } else if (sc) loCtx.drawImage(sc, sprX + v.dx, sy + v.dy);
-    else blit(loCtx, SP[frame], pal.p, sprX + v.dx, sy + v.dy);
+    };
+    poner(true, 0);
+    poner(false, v.dy);
     for (const f of fx) if (!f.espera) blit(loCtx, FX[f.k], FXP, Math.round(f.x), Math.round(f.y));
     if (v.anim === 'dormida') {
       const p = Math.floor(t / ANIM_Z_TICKS) % 3;
@@ -234,7 +240,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     canvas.height = H * s;
     lo.width = W;
     lo.height = H;
-    if (comp) comp = { ...comp, x: Math.min(Math.max(comp.x, rango().xmin), rango().xmax) };
+    if (comp) comp = { ...comp, x: fijar(comp.x, rango().xmin, rango().xmax) };
     canvas.dataset.escala = String(s);
     canvas.style.width = `${(W * s) / dpr}px`;
     canvas.style.height = `${(H * s) / dpr}px`;

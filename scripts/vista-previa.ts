@@ -71,7 +71,7 @@ function dibujar(cv, nombre, dx, dy, margen) {
       const ch = fila[x];
       if (ch === '.') continue;
       c.fillStyle = pal[parseInt(ch, 36)];
-      c.fillRect((x + margen + dx) * E, (y + margen + dy) * E, E, E);
+      c.fillRect((x + margen + dx) * E, (y + margen + (ch === 'm' ? 0 : dy)) * E, E, E); // 'm' = sombra (índice 22): se queda en el suelo
     }
   });
 }

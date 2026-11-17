@@ -1,4 +1,4 @@
-import { SEQ, type Efecto, type Frame, type Paso, type SeqNombre } from '../arte/sprites';
+import { SEQ, pasoEn, type Efecto, type Frame, type Paso, type SeqNombre } from '../arte/sprites';
 import type { Animo } from '../logica/animo';
 import {
   ANIM_MAX_TICKS_POR_VUELTA,
@@ -84,27 +84,24 @@ export function mulberry32(a: number): () => number {
 
 const ciclo = (seq: SeqNombre): number => SEQ[seq].reduce((a, p) => a + p.t, 0);
 const entre = (r: readonly [number, number], rng: () => number): number => r[0] + Math.floor(rng() * (r[1] - r[0] + 1));
-const fijar = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), hi);
-
-// Como frameEn, pero devuelve el paso completo (con dx/dy).
-export function pasoEn(seq: readonly Paso[], tick: number): Paso {
-  const total = seq.reduce((a, p) => a + p.t, 0);
-  let r = total > 0 ? ((tick % total) + total) % total : 0;
-  for (const p of seq) {
-    if (r < p.t) return p;
-    r -= p.t;
-  }
-  return seq[0] ?? { f: 'idle0', t: 1 };
-}
+export const fijar = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), hi);
 
 export function crear(x: number, animacion: Animo['animacion'] = 'reposo'): Comp {
-  return { x, anim: animacion, modo: 'ocio', seq: animacion === 'reposo' ? 'reposo' : animacion, t: 0, dur: OCIO_PAUSA_TICKS[0], dest: x, dir: 1, sin: 0, espejo: false };
+  return { x, anim: animacion, modo: 'ocio', seq: animacion, t: 0, dur: OCIO_PAUSA_TICKS[0], dest: x, dir: 1, sin: 0, espejo: false };
 }
 
 function descansar(n: Comp, rng: () => number): void {
   n.seq = 'reposo';
   n.t = 0;
   n.dur = entre(OCIO_PAUSA_TICKS, rng);
+}
+
+// Vuelve al ánimo de fondo (triste o reposo) tras una reacción o un cambio de ánimo.
+function volver(n: Comp, rng: () => number): void {
+  n.modo = 'ocio';
+  n.t = 0;
+  if (n.anim === 'triste') n.seq = 'triste';
+  else descansar(n, rng);
 }
 
 function sortear(rng: () => number): keyof typeof OCIO_PESOS {
@@ -126,7 +123,8 @@ function elegir(n: Comp, e: Entorno, rng: () => number): void {
     return;
   }
   let d = e.xmin + Math.floor(rng() * (e.xmax - e.xmin + 1));
-  if (Math.abs(d - n.x) < OCIO_CAMINAR_MIN_PX) d = n.x - e.xmin > e.xmax - n.x ? e.xmin : e.xmax;
+  // Paseo corto: se alarga al mínimo hacia el lado con más espacio, no hasta el borde.
+  if (Math.abs(d - n.x) < OCIO_CAMINAR_MIN_PX) d = fijar(n.x + (e.xmax - n.x >= n.x - e.xmin ? 1 : -1) * OCIO_CAMINAR_MIN_PX, e.xmin, e.xmax);
   if (d === n.x) return descansar(n, rng);
   n.seq = 'caminar';
   n.t = 0;
@@ -139,7 +137,10 @@ function elegir(n: Comp, e: Entorno, rng: () => number): void {
 // Un tick (100 ms). Devuelve un estado nuevo.
 export function paso(c: Comp, e: Entorno, rng: () => number): Comp {
   const n = { ...c };
-  if (e.animacion !== n.anim) {
+  if (e.animacion !== n.anim && n.modo === 'reaccion' && e.animacion !== 'dormida') {
+    n.anim = e.animacion; // la reacción sigue y al acabar pasa al ánimo nuevo
+    n.t++;
+  } else if (e.animacion !== n.anim) {
     n.anim = e.animacion;
     n.modo = 'ocio';
     n.t = 0;
@@ -149,19 +150,13 @@ export function paso(c: Comp, e: Entorno, rng: () => number): Comp {
       n.t = -BOSTEZO_ESPERA_TICKS;
       n.dur = ciclo('bostezo');
       n.espejo = false;
-    } else if (n.anim === 'triste') n.seq = 'triste';
-    else descansar(n, rng);
+    } else volver(n, rng);
   } else n.t++;
   n.x = n.anim === 'dormida' ? Math.floor((e.xmin + e.xmax) / 2) : fijar(n.x, e.xmin, e.xmax);
   if (n.modo === 'bostezo') {
     if (n.t >= n.dur) Object.assign(n, { modo: 'ocio', seq: 'dormida', t: 0 });
   } else if (n.modo === 'reaccion') {
-    if (n.t >= n.dur) {
-      n.modo = 'ocio';
-      n.t = 0;
-      if (n.anim === 'triste') n.seq = 'triste';
-      else descansar(n, rng);
-    }
+    if (n.t >= n.dur) volver(n, rng);
   } else if (n.anim === 'reposo') {
     if (n.seq !== 'caminar') n.sin++;
     if (n.seq === 'caminar') {

@@ -53,6 +53,16 @@ test('se ven 5 medidores y 6 botones de al menos 44 px', async ({ page }) => {
   }
 });
 
+test('Sonido alterna aria-pressed y persiste al recargar', async ({ page }) => {
+  await abrir(page);
+  const b = page.getByRole('button', { name: 'Sonido' });
+  await expect(b).toHaveAttribute('aria-pressed', 'true');
+  await b.click();
+  await expect(b).toHaveAttribute('aria-pressed', 'false');
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Sonido' })).toHaveAttribute('aria-pressed', 'false');
+});
+
 test('Alimentar sube comida y cariño, y persiste al recargar', async ({ page }) => {
   await abrir(page, (ahora) => ({ version: 1, comida: 20, energia: 80, higiene: 80, diversion: 80, carino: 50, dormida: false, pijama: false, ultimaVez: ahora }));
   expect(await valor(page, 'Comida')).toBe(20);
@@ -301,5 +311,10 @@ for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {
     expect(r.w / r.escala).toBeGreaterThanOrEqual(80);
     expect(r.sh).toBeLessThanOrEqual(r.ih);
     expect(r.sw).toBeLessThanOrEqual(r.iw);
+    const caja = await page.getByRole('button', { name: 'Sonido' }).boundingBox();
+    expect(caja?.width).toBeGreaterThanOrEqual(44);
+    expect(caja?.height).toBeGreaterThanOrEqual(44);
+    expect(caja!.x).toBeGreaterThanOrEqual(0);
+    expect(caja!.x + caja!.width).toBeLessThanOrEqual(vp.width);
   });
 }

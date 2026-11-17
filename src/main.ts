@@ -6,8 +6,9 @@ import { alternarPijama, acariciar, alimentar, banar, despertar, dormir, jugar, 
 import { TICK_MS } from './logica/balance';
 import type { Estado } from './logica/estado';
 import { cargar, guardar, type Almacen } from './logica/guardado';
-import { aplicarTiempo } from './logica/tiempo';
+import { aplicarTiempo, esDeNoche } from './logica/tiempo';
 import { esIOS, esInstalada, registrarSW } from './pwa';
+import { crearSonido } from './audio/sonido';
 import { crearInterfaz } from './ui/interfaz';
 
 const app = document.querySelector<HTMLElement>('#app');
@@ -31,29 +32,41 @@ function jugarJuego(raiz: HTMLElement): void {
   const soloLectura = cargado.soloLectura;
   let estado = aplicarTiempo(cargado.estado, Date.now());
 
+  const pintar = (): void => {
+    const ahora = Date.now();
+    ui.pintar(estado, ahora);
+    sonido.ambiente({ noche: esDeNoche(ahora), dormida: estado.dormida });
+  };
   const guardarYa = (): void => void guardar(almacen, estado, soloLectura);
-  const ui = crearInterfaz(raiz, (accion) => {
-    estado = aplicarTiempo(estado, Date.now());
-    if (!puede(estado, accion)) return;
-    estado = ACCIONES[accion](estado);
-    guardarYa();
-    ui.pintar(estado, Date.now());
-    const efecto = EFECTOS[accion];
-    if (efecto) ui.efecto(efecto);
+  const sonido = crearSonido(almacen);
+  const ui = crearInterfaz(raiz, {
+    sonidoActivo: sonido.activo(),
+    alSonido: () => sonido.alternar(),
+    alAccionar: (accion) => {
+      estado = aplicarTiempo(estado, Date.now());
+      if (!puede(estado, accion)) return;
+      estado = ACCIONES[accion](estado);
+      guardarYa();
+      sonido.reaccion(accion);
+      pintar();
+      const efecto = EFECTOS[accion];
+      if (efecto) ui.efecto(efecto);
+    },
   });
 
   const refrescar = (): void => {
     estado = aplicarTiempo(estado, Date.now());
     guardarYa();
-    ui.pintar(estado, Date.now());
+    pintar();
   };
-  ui.pintar(estado, Date.now());
+  pintar();
   window.setInterval(refrescar, TICK_MS);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       estado = aplicarTiempo(estado, Date.now());
-      ui.pintar(estado, Date.now());
+      pintar();
     } else guardarYa();
+    sonido.sincronizar();
   });
   window.addEventListener('pagehide', guardarYa);
   navigator.storage?.persist?.().catch(() => {});

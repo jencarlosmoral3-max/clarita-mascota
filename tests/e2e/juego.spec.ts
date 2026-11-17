@@ -169,8 +169,48 @@ test('al dormir la transición pasa por pasos > 0 y vuelve a 0', async ({ page }
   expect(await canvas.getAttribute('data-transicion')).toBe('0');
 });
 
+const comidaBaja = (ahora: number): Record<string, unknown> => ({ version: 1, comida: 20, energia: 80, higiene: 80, diversion: 80, carino: 50, dormida: false, pijama: false, ultimaVez: ahora }); // autocontenida: se serializa
+const animaciones = (page: Page, soloCorriendo = false): Promise<number> =>
+  page.evaluate((s) => document.getAnimations().filter((a) => !s || a.playState === 'running').length, soloCorriendo);
+
+test('Alimentar anima la interfaz y el medidor sube', async ({ page }) => {
+  await abrir(page, comidaBaja);
+  await page.getByRole('button', { name: 'Alimentar' }).click();
+  await expect.poll(() => animaciones(page)).toBeGreaterThan(0);
+  expect(await valor(page, 'Comida')).toBe(100);
+  const barra = page.getByRole('progressbar', { name: 'Comida' });
+  await expect(barra).toHaveAttribute('aria-valuetext', '100%');
+});
+
+test('el medidor bajo lo dice en aria-valuetext', async ({ page }) => {
+  await abrir(page, comidaBaja);
+  await expect(page.getByRole('progressbar', { name: 'Comida' })).toHaveAttribute('aria-valuetext', '20%, bajo');
+  await expect(page.getByRole('progressbar', { name: 'Energía' })).toHaveAttribute('aria-valuetext', '80%');
+});
+
+test('los efectos se acumulan y desaparecen', async ({ page }) => {
+  await page.clock.install(); // el tiempo solo avanza con runFor: sin carreras
+  await abrir(page, diversionBaja);
+  const canvas = page.getByRole('img', { name: /Clarita/ });
+  const fx = async () => Number(await canvas.getAttribute('data-fx'));
+  await page.getByRole('button', { name: 'Bañar' }).click();
+  const uno = await fx();
+  expect(uno).toBeGreaterThan(0);
+  await page.getByRole('button', { name: 'Acariciar' }).click();
+  expect(await fx()).toBeGreaterThan(uno);
+  await page.clock.runFor(4000);
+  await expect.poll(fx).toBe(0);
+});
+
 test.describe('movimiento reducido', () => {
   test.use({ reducedMotion: 'reduce' });
+  test('sin animaciones de interfaz al accionar', async ({ page }) => {
+    await abrir(page, comidaBaja);
+    await page.getByRole('button', { name: 'Alimentar' }).click();
+    expect(await valor(page, 'Comida')).toBe(100);
+    expect(await animaciones(page, true)).toBe(0);
+  });
+
   test('sin reloj: el frame no cambia y el efecto se borra solo', async ({ page }) => {
     await abrir(page, diversionBaja);
     const canvas = page.getByRole('img', { name: /Clarita/ });

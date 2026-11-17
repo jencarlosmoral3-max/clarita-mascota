@@ -12,8 +12,8 @@ Cambios del chairman sobre esas respuestas, por crítica de Opus, incluidos en e
 
 | Hito | Estado |
 |---|---|
-| M1 balance (`m1-balance`) | En curso |
-| M2 sonido (`m2-sonido`) | Pendiente |
+| M1 balance (`m1-balance`) | Cerrado, PR #18. 202/202 unit, 30/30 e2e |
+| M2 sonido (`m2-sonido`) | Cerrado en PR propio. WebAudio sintetizado, `src/audio/sonido.ts`, botón Sonido en cabecera, clave `clarita.sonido`. 208/208 unit, 31/31 e2e. Revisión: arreglados clic del agua al reanudar y carrera de `resume()` con sonido apagado. **No verificado: nadie oyó los sonidos; iPhone real (desbloqueo, interruptor de silencio, `audioSession`)** |
 | M3 tutorial (`m3-tutorial`) | Pendiente, depende de M2 |
 
 ## Plan base

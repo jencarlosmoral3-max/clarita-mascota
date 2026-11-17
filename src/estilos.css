@@ -64,7 +64,13 @@ canvas { touch-action: none; }
 .cabecera { flex: none; display: grid; gap: 4px; padding: calc(8px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) 10px calc(20px + env(safe-area-inset-left)); }
 .fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .cabecera h1 { margin: 0; font: 700 30px/1 var(--pixel); }
-.chip { font: 700 13px var(--pixel); border: 2px solid var(--g-edge); background: var(--g-face); padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.chip { font: 700 13px var(--pixel); border: 2px solid var(--g-edge); background: var(--g-face); padding: 3px 8px; border-radius: 6px; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.cab-botones { display: flex; gap: 6px; flex: none; }
+.cab-btn { position: relative; width: 44px; height: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; background: var(--g-face); border: 2px solid var(--g-edge); border-radius: 8px; cursor: pointer; }
+.cab-btn canvas { width: 24px; height: 24px; image-rendering: pixelated; }
+.cab-btn[aria-pressed='false'] canvas { opacity: 0.4; }
+.cab-btn[aria-pressed='false']::after { content: ''; position: absolute; left: 8px; right: 8px; top: 50%; border-top: 3px solid var(--g-accent); transform: rotate(-45deg); }
+.cab-btn:focus-visible { outline: 3px solid var(--g-accent); outline-offset: 2px; }
 .frase { margin: 0; color: var(--g-ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .escena { flex: 1 1 0; min-height: 0; position: relative; overflow: hidden; background: #0f4fc4; }
 .juego[data-hora='noche'] .escena { background: #080c2b; }

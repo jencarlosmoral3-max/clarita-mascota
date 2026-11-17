@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { dormitorio, laguna } from '../../src/arte/fondos';
 import { PAL, SCN } from '../../src/arte/paleta';
-import { FX, ICONOS, PLUSH, SP } from '../../src/arte/sprites';
+import { FX, ICONOS, PLUSH, SEQ, SP, frameEn } from '../../src/arte/sprites';
 
 describe('sprites', () => {
   for (const [nombre, g] of Object.entries(SP)) {
@@ -41,4 +41,28 @@ describe('fondos', () => {
       });
     }
   }
+});
+
+describe('secuencias', () => {
+  for (const [nombre, seq] of Object.entries(SEQ)) {
+    it(`${nombre}: pasos con frame existente y t entero >= 1`, () => {
+      expect(seq.length).toBeGreaterThan(0);
+      for (const p of seq) {
+        expect(SP[p.f]).toBeDefined();
+        expect(Number.isInteger(p.t) && p.t >= 1).toBe(true);
+      }
+    });
+    it(`${nombre}: frameEn recorre el ciclo y vuelve al inicio`, () => {
+      const total = seq.reduce((a, p) => a + p.t, 0);
+      expect(frameEn(seq, 0)).toBe(seq[0]?.f);
+      expect(frameEn(seq, total)).toBe(seq[0]?.f);
+      expect(frameEn(seq, total - 1)).toBe(seq[seq.length - 1]?.f);
+    });
+  }
+
+  it('reposo dura 3 s (30 ticks) e incluye blink', () => {
+    expect(SEQ.reposo.reduce((a, p) => a + p.t, 0)).toBe(30);
+    expect(SEQ.reposo.some((p) => p.f === 'blink')).toBe(true);
+    expect(frameEn(SEQ.reposo, 29)).toBe('blink');
+  });
 });

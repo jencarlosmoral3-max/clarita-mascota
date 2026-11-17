@@ -24,3 +24,10 @@ export const INICIAL = { comida: 80, energia: 80, higiene: 80, diversion: 80, ca
 // Noche local: de HORA_INICIO_NOCHE:00 a HORA_FIN_NOCHE-1:59.
 export const HORA_INICIO_NOCHE = 20;
 export const HORA_FIN_NOCHE = 7;
+
+// Animación: paso lógico de 100 ms. Lo que antes contaba pasos de 300 ms ahora cuenta 3 pasos.
+export const ANIM_TICK_MS = 100;
+export const ANIM_MAX_TICKS_POR_VUELTA = 3;
+export const ANIM_TICKS_POR_PASO_ANTIGUO = 3;
+export const FX_QUITAR_MS = 1500; // con movimiento reducido, el efecto estático se borra a los 1,5 s
+export const FX_VIDA_TICKS = 18;

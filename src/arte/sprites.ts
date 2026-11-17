@@ -489,51 +489,37 @@ export const PARCHES = {
     '-1eeekk1-',
     '--11111--',
   ] },
-  rascaA: { x: 3, y: 26, filas: [
-    '---------',
-    '--1-1-1--',
-    '-1666661-',
-    '-1666661-',
-    '-1666561-',
-    '--15551--',
-    '--14441--',
-    '--14441--',
-    '--13441--',
-    '--134431-',
-    '-13333441',
-    '133334341',
-    '133343431',
-    '133433331',
-    '134333331',
-    '133433341',
-    '133333431',
-    '-1333331-',
-    '-1333331-',
-    '--11111--',
-    'mmmmm----',
+  rascaA: { x: 3, y: 27, filas: [
+    '--1-1-1---',
+    '-1666661--',
+    '-1666661--',
+    '-1666561--',
+    '--15551---',
+    '--14441---',
+    '---1441---',
+    '----14431-',
+    '-----1331-',
+    '------131-',
   ] },
   rascaB: { x: 3, y: 26, filas: [
-    '---------',
-    '---------',
-    '---------',
-    '--1-1-1--',
-    '-1666661-',
-    '-1666661-',
-    '-1666561-',
-    '--15551--',
-    '--14441--',
-    '--134431-',
-    '-13333441',
-    '133334341',
-    '133343431',
-    '133433331',
-    '134333331',
-    '133433341',
-    '133333431',
-    '-1333331-',
-    '-1333331-',
-    '--11111--',
-    'mmmmm----',
+    '--1-1-1---',
+    '-1666661--',
+    '-1666661--',
+    '-1666561--',
+    '--15551---',
+    '--14441---',
+    '--14441---',
+    '---1441---',
+    '----14431-',
+    '-----1331-',
+    '------131-',
+  ] },
+  ojosGusto: { x: 16, y: 17, filas: [
+    '34333-------44344',
+    '31113-------41114',
+    '14331-------14341',
+    '43444-------44433',
+    '43444-------44433',
   ] },
 } as const satisfies Record<string, Parche>;
 export type ParcheNombre = keyof typeof PARCHES;
@@ -547,19 +533,32 @@ export const COMPUESTOS = {
   colaB: { base: 'idle0', parches: ['colaB'] },
   miraI: { base: 'idle0', parches: ['ojosIzq'] },
   miraD: { base: 'idle0', parches: ['ojosDer'] },
-  rascaA: { base: 'sleep0', parches: ['ojosSentada', 'rascaA'] },
-  rascaB: { base: 'sleep0', parches: ['ojosSentada', 'rascaB'] },
+  rascaA: { base: 'sleep0', parches: ['ojosGusto'], ladeo: -1, despues: ['rascaA'] },
+  rascaB: { base: 'sleep0', parches: ['ojosGusto'], ladeo: -1, despues: ['rascaB'] },
+  sacudeI: { base: 'blink', parches: [], ladeo: -1 },
+  sacudeD: { base: 'blink', parches: [], ladeo: 1 },
   comerAbierta: { base: 'idle1', parches: ['bocaAbierta1'] },
   jugar: { base: 'idle0', parches: ['bocaApreta', 'peluche'] },
   felizA: { base: 'idle0', parches: ['ojosFelices', 'colaA'] },
   felizB: { base: 'idle0', parches: ['ojosFelices', 'colaB'] },
   bostezo: { base: 'sleep0', parches: ['ojosApretados', 'bocaMuyAbierta'] },
-} as const satisfies Record<string, { base: FrameBase; parches: readonly ParcheNombre[] }>;
+} as const satisfies Record<string, { base: FrameBase; parches: readonly ParcheNombre[]; ladeo?: -1 | 1; despues?: readonly ParcheNombre[] }>;
 
 export type Frame = FrameBase | keyof typeof COMPUESTOS;
 
-function componer(base: Grilla, parches: readonly ParcheNombre[]): Grilla {
-  const g = base.map((f) => f.slice());
+// Inclinación de cabeza por cizalla: desde la fila de la coronilla, 2 px las primeras LADEO_FILAS[0] filas,
+// 1 px hasta LADEO_FILAS[1] (orejas incluidas) y 0 en el cuerpo.
+export const LADEO_FILAS = [8, 24] as const;
+function ladear(g: Grilla, dir: -1 | 1): Grilla {
+  const top = Math.max(0, g.findIndex((f) => f.some(Boolean)) - 1);
+  return g.map((f, y) => {
+    const r = y - top;
+    const s = (r < 0 ? 0 : r <= LADEO_FILAS[0] ? 2 : r <= LADEO_FILAS[1] ? 1 : 0) * dir;
+    return s === 0 ? f : f.map((_, x) => f[x - s] ?? 0);
+  });
+}
+
+function aplicar(g: Grilla, parches: readonly ParcheNombre[]): void {
   for (const n of parches) {
     const p: Parche = PARCHES[n];
     p.filas.forEach((fila, j) =>
@@ -570,12 +569,19 @@ function componer(base: Grilla, parches: readonly ParcheNombre[]): Grilla {
       }),
     );
   }
-  return g;
+}
+
+function componer(base: Grilla, parches: readonly ParcheNombre[], ladeo?: -1 | 1, despues: readonly ParcheNombre[] = []): Grilla {
+  const g = base.map((f) => f.slice());
+  aplicar(g, parches);
+  const r = ladeo ? ladear(g, ladeo) : g;
+  aplicar(r, despues);
+  return r;
 }
 
 export const SP = {
   ...BASE,
-  ...Object.fromEntries(Object.entries(COMPUESTOS).map(([k, v]) => [k, componer(BASE[v.base], v.parches)])),
+  ...Object.fromEntries(Object.entries(COMPUESTOS).map(([k, v]) => [k, componer(BASE[v.base], v.parches, 'ladeo' in v ? v.ladeo : undefined, 'despues' in v ? v.despues : undefined)])),
 } as Record<Frame, Grilla>;
 
 export const PLUSH: Grilla = dec(["..11..........",".1221.11111111","12231122222221","12222222322221",".1222222222221",".1444444444441","..11111111111."]);
@@ -728,10 +734,10 @@ export const SEQ: Record<SeqNombre, readonly Paso[]> = {
   sentada: [{ f: 'sentada', t: 30 }],
   cola: rep(6, [{ f: 'colaA', t: 1 }, { f: 'colaB', t: 1 }]),
   mirar: [{ f: 'miraI', t: 8 }, { f: 'idle0', t: 3 }, { f: 'miraD', t: 8 }],
-  rascarse: rep(8, [{ f: 'rascaA', t: 1 }, { f: 'rascaB', t: 1 }]),
+  rascarse: [{ f: 'sentada', t: 2 }, ...rep(5, [{ f: 'rascaA', t: 1 }, { f: 'rascaB', t: 1 }]), { f: 'sentada', t: 2 }],
   comer: rep(4, [{ f: 'comerAbierta', t: 2 }, { f: 'idle1', t: 2 }]),
   jugar: rep(2, [{ f: 'jugar', t: 2 }, { f: 'jugar', t: 2, dy: -2 }, { f: 'jugar', t: 2 }, { f: 'jugar', t: 2, dy: -2 }]),
-  sacudirse: rep(5, [{ f: 'blink', t: 1, dx: 1 }, { f: 'blink', t: 1, dx: -1 }]),
+  sacudirse: [...rep(2, [{ f: 'sacudeI', t: 2, dx: -1 }, { f: 'blink', t: 1 }, { f: 'sacudeD', t: 2, dx: 1 }, { f: 'blink', t: 1 }]), { f: 'blink', t: 2 }],
   feliz: rep(7, [{ f: 'felizA', t: 1 }, { f: 'felizB', t: 1 }]),
   bostezo: [{ f: 'sleep0', t: 3 }, { f: 'bostezo', t: 8 }, { f: 'sleep0', t: 3 }],
 };

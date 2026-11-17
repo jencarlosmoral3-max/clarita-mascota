@@ -209,7 +209,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     } else if (sc) loCtx.drawImage(sc, sprX + v.dx, sy + v.dy);
     else blit(loCtx, SP[frame], pal.p, sprX + v.dx, sy + v.dy);
     for (const f of fx) if (!f.espera) blit(loCtx, FX[f.k], FXP, Math.round(f.x), Math.round(f.y));
-    if (an === 'dormida') {
+    if (v.anim === 'dormida') {
       const p = Math.floor(t / ANIM_Z_TICKS) % 3;
       for (let i = 0; i < 3; i++) blit(loCtx, FX.z, FXP, sprX + 36 + i * 5, sy + 8 - ((p + i) % 3) * 6);
     }

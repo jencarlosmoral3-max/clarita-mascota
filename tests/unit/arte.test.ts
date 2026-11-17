@@ -89,6 +89,19 @@ describe('parches y compuestos', () => {
     });
   }
 
+  for (const [nombre, c] of Object.entries(COMPUESTOS)) {
+    if (!('ladeo' in c)) continue;
+    it(`compuesto ladeado ${nombre}: 48x48, sin recortes ni agujeros (píxeles ±10 %)`, () => {
+      const cuenta = (g: number[][]) => g.flat().filter(Boolean).length;
+      const g = SP[nombre as keyof typeof COMPUESTOS];
+      expect(g).toHaveLength(48);
+      for (const f of g) expect(f).toHaveLength(48);
+      const n = cuenta(g), b = cuenta(SP[c.base]);
+      expect(Math.abs(n - b)).toBeLessThanOrEqual(b * 0.1);
+      expect(JSON.stringify(g)).not.toBe(JSON.stringify(SP[c.base]));
+    });
+  }
+
   it('la lengua (23) existe y no se apaga con el pijama', () => {
     expect(PAL[23]).toBeDefined();
     expect(PJ_OFF[23]).toBeUndefined();

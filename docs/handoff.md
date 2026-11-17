@@ -27,8 +27,8 @@ arte con vista previa antes de integrar.
 |---|---|
 | M1 motor (reloj 100 ms, SEQ con duración, sprites cacheados) | Cerrado, PR #12 |
 | M2 arte por parches + vista previa | En curso, rama `m2-arte`. Compuerta: aprobación del CTO |
-| M3 escenario vivo | En curso, rama `m3-escenario` |
-| M4 interfaz y partículas | No iniciado |
+| M3 escenario vivo | Cerrado, PR #13 |
+| M4 interfaz y partículas | En curso, rama `m4-interfaz` |
 | M5 comportamiento integrado | No iniciado. Depende de M2 aprobado |
 
 ### M1 motor (PR #12)
@@ -46,12 +46,34 @@ arte con vista previa antes de integrar.
 - **Pendiente para M5**: `efecto()` y el peluche usan la x centrada de `geo()`, no `sprX`.
 - No verificado: pausa real con `document.hidden`, rendimiento en iPhone. Codex: no verificado.
 
+### M2 arte (en espera del CTO)
+
+- Commit `569e7e5` en rama local `m2-arte` (worktree `.claude/worktrees/agent-a673d69fb0facf65c`),
+  sin push. Salió de `m1-motor` antes del squash: necesita rebase sobre `main`.
+- Vista previa publicada: https://claude.ai/artifact/RLJNXzwGKt55ddg3fEjjDk (se regenera con
+  `npm run vista-previa` en esa rama).
+- Juicio del chairman: bien cola, mirar, feliz, comer; flojas rascarse, trote, peluche, bostezo.
+- Sin reviews todavía. No se integra ni se mergea hasta que el CTO apruebe.
+
+### M3 escenario vivo (PR #13)
+
+- Nubes fuera del fondo cacheado (derivan 1 px/s, pasan detrás de las montañas), titileo de
+  estrellas de noche, destellos del agua, transición laguna/dormitorio con dither Bayer en 4 pasos.
+  Con movimiento reducido todo estático.
+- `page.clock` funciona en WebKit Linux con `runFor`; `fastForward` no avanza la animación (tope de
+  3 pasos por vuelta). Usarlo en los e2e de M5.
+- Verificado: typecheck, 93/93 unit, build, 21/21 e2e, CI verde, capturas de día, noche y transición.
+- `/code-review`: aplicados 7 hallazgos (transición colgada tras resize, color de apagado de
+  estrella, brillo con movimiento reducido, destellos en columnas, lectura de píxeles por dibujado,
+  e2e frágil, nubes delante de montañas). Rechazado: nubes ausentes durante los 4 pasos.
+- No verificado: titileo en movimiento, rendimiento en iPhone. Codex: no verificado.
+
 ## Estado (2026-11-16)
 
 - **El juego es jugable en local**: `npm run dev` (en escritorio se juega directo; en iPhone sin
   instalar muestra la pantalla de instalación). Medidores, 6 acciones, tocar a Clarita, pijama,
   día/noche, dormitorio al dormir, animación y efectos, guardado local, offline.
-- `main` verificado: `npm run typecheck` limpio, `npm test` 88/88, `npm run e2e` 18/18 (WebKit,
+- `main` verificado: `npm run typecheck` limpio, `npm test` 93/93, `npm run e2e` 21/21 (WebKit,
   perfil iPhone 13).
 - Repo: GitHub público `jencarlosmoral3-max/clarita-mascota`. `gh` y `git push/fetch` se corren con
   `GH_TOKEN=$(gh auth token -u jencarlosmoral3-max)`; la cuenta activa global de `gh` sigue siendo

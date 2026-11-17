@@ -1,15 +1,22 @@
 import { dormitorio, esCielo, laguna, mascaraDither, nubes, type Nube } from '../arte/fondos';
 import { FXP, PLUSH_PAL, SCN, paletaSprite } from '../arte/paleta';
-import { FX, PLUSH, SEQ, SP, frameEn, type Efecto, type Frame, type Grilla } from '../arte/sprites';
+import { FX, PLUSH, SEQ, SP, frameEn, type Frame, type Grilla } from '../arte/sprites';
 import { animo } from '../logica/animo';
 import {
-  ANIM_TICKS_POR_PASO_ANTIGUO as K,
+  ANIM_BOB_TICKS,
   ANIM_TICK_MS,
+  ANIM_Z_TICKS,
   DESTELLO_FASES,
   DESTELLO_UNO_DE_CADA,
   DESTELLO_PERIODO_TICKS,
+  FX_BURBUJA,
+  FX_CORAZON,
+  FX_ESTRELLITA,
+  FX_GOTA,
+  FX_HUESO,
+  FX_MIGA,
+  FX_PELOTA,
   FX_QUITAR_MS,
-  FX_VIDA_TICKS,
   NUBES_TICKS_POR_PX,
   TITILEO_FASES,
   TITILEO_PERIODO_TICKS,
@@ -17,7 +24,7 @@ import {
 } from '../logica/balance';
 import type { Estado } from '../logica/estado';
 import { esDeNoche } from '../logica/tiempo';
-import { avanzar } from './comportamiento';
+import { agregarParticulas, avanzar, pasoParticulas, type Particula } from './comportamiento';
 
 export type EfectoAccion = 'alimentar' | 'jugar' | 'banar' | 'acariciar';
 
@@ -26,8 +33,6 @@ const ALTO_MIN = 56; // el sprite (48) más aire arriba; si la escena es baja, l
 
 type Brillo = [x: number, y: number, fase: number, alt: number]; // alt: índice de paleta al que cambia
 type Fondo = { clave: string; lugar: string; c: HTMLCanvasElement; estrellas: Brillo[]; agua: Brillo[]; cielo?: Uint8Array; nubes?: Nube[] }; // cielo/nubes: solo la laguna
-
-type Particula = { k: Efecto; x: number; y: number; vy: number };
 
 function blit(ctx: CanvasRenderingContext2D, g: Grilla, pal: readonly string[], ox: number, oy: number): void {
   g.forEach((fila, y) =>
@@ -64,10 +69,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
   let acum = 0;
   let sprX = 0;
   let fx: Particula[] = [];
-  let fxKind: EfectoAccion | undefined;
-  let fxVida = 0;
-  let fxT = 0;
-  let fxGeo = { sy: 0, base: 0 };
+  let fxKind: EfectoAccion | undefined; // último efecto: solo decide el vaivén del cuerpo
   let quitar = 0;
 
   const geo = (laguna_: boolean) => {
@@ -171,8 +173,8 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     const secuencia = SEQ[an];
     sprX = sx;
     const bob = fx.length > 0 && (fxKind === 'alimentar' || fxKind === 'jugar') && (an === 'reposo' || an === 'triste');
-    const frame: Frame = bob ? (Math.floor(t / K) % 2 ? 'idle1' : 'idle0') : frameEn(secuencia, t);
-    if (lugar === 'dormitorio') blit(loCtx, PLUSH, PLUSH_PAL, sx - 9, base - 6);
+    const frame: Frame = bob ? (Math.floor(t / ANIM_BOB_TICKS) % 2 ? 'idle1' : 'idle0') : frameEn(secuencia, t);
+    if (lugar === 'dormitorio') blit(loCtx, PLUSH, PLUSH_PAL, sprX - 9, base - 6);
     if (pal?.pijama !== estado.pijama) pal = { pijama: estado.pijama, p: paletaSprite(estado.pijama) };
     canvas.dataset.frame = frame;
     canvas.dataset.fx = String(fx.length);
@@ -195,7 +197,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     else blit(loCtx, SP[frame], pal.p, sprX, sy);
     for (const f of fx) blit(loCtx, FX[f.k], FXP, Math.round(f.x), Math.round(f.y));
     if (an === 'dormida') {
-      const p = Math.floor(t / (2 * K)) % 3;
+      const p = Math.floor(t / ANIM_Z_TICKS) % 3;
       for (let i = 0; i < 3; i++) blit(loCtx, FX.z, FXP, sprX + 36 + i * 5, sy + 8 - ((p + i) % 3) * 6);
     }
 
@@ -236,18 +238,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
         trans = undefined;
       }
     }
-    if (fxVida > 0) {
-      fxVida--;
-      fxT++;
-      for (const f of fx) {
-        if (fxKind === 'jugar') {
-          f.y = fxGeo.base - 6 - Math.round(Math.abs(Math.sin((fxT * 0.9) / K)) * 16);
-          f.x += 1 / K;
-        } else if (fxKind === 'alimentar') f.y = Math.min(f.y + f.vy / K, fxGeo.sy + 24);
-        else f.y += f.vy / K;
-      }
-      if (!fxVida) fx = [];
-    }
+    if (fx.length && estado) fx = pasoParticulas(fx, geo(!estado.dormida).base - 6);
   }
 
   // Reloj: setTimeout encadenado que mide el tiempo real; dibuja (un rAF) solo si hubo ticks.
@@ -279,7 +270,6 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
   function limpiarFx(): void {
     clearTimeout(quitar);
     fx = [];
-    fxVida = 0;
   }
 
   function arrancar(): void {
@@ -321,19 +311,39 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     },
     efecto(tipo: EfectoAccion): void {
       if (!estado || !W) return;
-      const { sx, sy, base } = geo(!estado.dormida);
+      const { sy, base } = geo(!estado.dormida);
+      const sx = sprX;
+      const q = reducir.matches;
+      const nuevas: Particula[] = [];
+      const add = (k: Particula['k'], x: number, y: number, vx: number, vy: number, g: number, vida: number, extra?: Partial<Particula>) =>
+        nuevas.push({ k, x, y, vx, vy, g, vida, ...extra });
+      const estrellas = () => {
+        for (let i = 0; i < FX_ESTRELLITA.n; i++) add('estrellita', sx + 8 + i * 9, sy + 2 + (i % 2) * 8, 0, FX_ESTRELLITA.vy, 0, FX_ESTRELLITA.vida);
+      };
+      if (tipo === 'acariciar') {
+        for (let i = 0; i < FX_CORAZON.n; i++) add('heart', sx + 8 + i * 7, sy + 4 - (i % 2) * 4, 0, FX_CORAZON.vy, 0, FX_CORAZON.vida);
+        estrellas();
+      }
+      if (tipo === 'banar') {
+        for (let i = 0; i < FX_BURBUJA.n; i++) add('bubble', sx + 6 + i * 5, sy + 30 - (i % 3) * 8, 0, FX_BURBUJA.vy, 0, FX_BURBUJA.vida);
+        for (let i = 0; i < FX_GOTA.n; i++) {
+          const lado = i % 2 ? 1 : -1;
+          add('gota', sx + 22 + lado * 14, sy + 30, lado * (FX_GOTA.vx + (i >> 1) * 0.4), FX_GOTA.vy - (i % 3) * 0.5, FX_GOTA.g, FX_GOTA.vida);
+        }
+      }
+      if (tipo === 'alimentar') {
+        add('bone', sx + 20, q ? sy + FX_HUESO.topeDy : sy - 8, 0, FX_HUESO.vy, 0, FX_HUESO.vida, { tope: sy + FX_HUESO.topeDy });
+        for (let i = 0; i < FX_MIGA.n; i++) add('miga', sx + 22, sy + 26, (i - (FX_MIGA.n - 1) / 2) * FX_MIGA.vx, FX_MIGA.vy - (i % 2) * 0.8, FX_MIGA.g, FX_MIGA.vida);
+      }
+      if (tipo === 'jugar') {
+        add('ball', sx + 38, base - 6, FX_PELOTA.vx, q ? 0 : FX_PELOTA.vy, FX_PELOTA.g, FX_PELOTA.vida, { rebota: true });
+        estrellas();
+      }
       clearTimeout(quitar);
-      fxGeo = { sy, base };
       fxKind = tipo;
-      fxT = 0;
-      fx = [];
-      if (tipo === 'acariciar') for (let i = 0; i < 5; i++) fx.push({ k: 'heart', x: sx + 8 + i * 7, y: sy + 4 - (i % 2) * 4, vy: -2 });
-      if (tipo === 'banar') for (let i = 0; i < 7; i++) fx.push({ k: 'bubble', x: sx + 6 + i * 5, y: sy + 30 - (i % 3) * 8, vy: -2 });
-      if (tipo === 'alimentar') fx.push({ k: 'bone', x: sx + 20, y: reducir.matches ? sy + 24 : sy - 8, vy: 4 });
-      if (tipo === 'jugar') fx.push({ k: 'ball', x: sx + 38, y: base - 6, vy: 0 });
-      fxVida = reducir.matches ? 0 : FX_VIDA_TICKS;
+      fx = agregarParticulas(fx, nuevas);
       dibujar();
-      if (reducir.matches) {
+      if (q) {
         quitar = window.setTimeout(() => {
           fx = [];
           dibujar();

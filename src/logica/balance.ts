@@ -28,9 +28,18 @@ export const HORA_FIN_NOCHE = 7;
 // Animación: paso lógico de 100 ms. Lo que antes contaba pasos de 300 ms ahora cuenta 3 pasos.
 export const ANIM_TICK_MS = 100;
 export const ANIM_MAX_TICKS_POR_VUELTA = 3;
-export const ANIM_TICKS_POR_PASO_ANTIGUO = 3;
+export const ANIM_BOB_TICKS = 3; // el cuerpo alterna idle0/idle1 cada 0,3 s mientras hay efecto
+export const ANIM_Z_TICKS = 6; // las Z de dormir suben un paso cada 0,6 s
 export const FX_QUITAR_MS = 1500; // con movimiento reducido, el efecto estático se borra a los 1,5 s
-export const FX_VIDA_TICKS = 18;
+export const FX_MAX = 40; // tope global de partículas; al pasarse se descartan las más viejas
+// Partículas (velocidades en px por tick, g = gravedad por tick, vida en ticks). n = cantidad.
+export const FX_CORAZON = { n: 5, vy: -0.7, vida: 18 } as const;
+export const FX_BURBUJA = { n: 7, vy: -0.7, vida: 18 } as const;
+export const FX_HUESO = { vy: 2, vida: 18, topeDy: 24 } as const; // topeDy: baja hasta la boca (sy + 24) y se queda
+export const FX_PELOTA = { vx: 0.33, vy: -6.2, g: 1.2, vida: 18 } as const; // rebota en el suelo; salto de ~16 px
+export const FX_MIGA = { n: 5, vx: 0.5, vy: -3, g: 0.7, vida: 9 } as const;
+export const FX_GOTA = { n: 7, vx: 1, vy: -2.5, g: 0.6, vida: 10 } as const;
+export const FX_ESTRELLITA = { n: 4, vy: -0.5, vida: 14 } as const;
 export const NUBES_TICKS_POR_PX = 10; // deriva: 1 px cada 10 ticks (1 s)
 export const TITILEO_PERIODO_TICKS = 6; // estrellas: cada 0,6 s cambia la fase
 export const TITILEO_FASES = 5; // cada estrella se apaga 1 fase de cada 5

@@ -51,6 +51,16 @@ function pintarIcono(c: HTMLCanvasElement, nombre: Icono, color: string): void {
   );
 }
 
+// Reinicia una animación CSS por clase y la limpia al terminar (con movimiento reducido no hay animationend: la clase queda inerte).
+function animar(e: HTMLElement, clase: string): void {
+  e.classList.remove(clase);
+  void e.offsetWidth;
+  e.classList.add(clase);
+  e.addEventListener('animationend', () => e.classList.remove(clase), { once: true });
+}
+
+const celdasEncendidas = (v: number): number => Math.min(10, Math.max(0, Math.ceil((v - MIN) / ((MAX - MIN) / 10))));
+
 export function crearInterfaz(app: HTMLElement, alAccionar: (a: Accion) => void) {
   const raiz = el('div', 'juego');
   const titulo = el('h1', undefined, 'Clarita');
@@ -84,7 +94,7 @@ export function crearInterfaz(app: HTMLElement, alAccionar: (a: Accion) => void)
     valor.setAttribute('aria-hidden', 'true');
     li.append(ico, el('span', 'nombre', nombre), celdas, valor);
     lista.append(li);
-    return { clave, ico, ic, celdas, cuadros, valor };
+    return { clave, ico, ic, celdas, cuadros, valor, previo: undefined as number | undefined };
   });
 
   const botonesEl = el('div', 'botones');
@@ -104,7 +114,11 @@ export function crearInterfaz(app: HTMLElement, alAccionar: (a: Accion) => void)
   app.replaceChildren(raiz);
 
   // Con la partida dormida el botón dice Despertar y emite esa acción (se calcula en pintar).
-  for (const bt of botones) bt.b.addEventListener('click', () => alAccionar(bt.efectiva));
+  for (const bt of botones)
+    bt.b.addEventListener('click', () => {
+      animar(bt.ico, 'pop');
+      alAccionar(bt.efectiva);
+    });
   canvas.addEventListener('pointerdown', (ev) => {
     if (ev.isPrimary && ev.button === 0 && escena.tocaSprite(ev.clientX, ev.clientY)) alAccionar('acariciar');
   });
@@ -114,7 +128,11 @@ export function crearInterfaz(app: HTMLElement, alAccionar: (a: Accion) => void)
       const noche = esDeNoche(ahora);
       raiz.dataset.hora = noche ? 'noche' : 'dia';
       const texto = animo(estado).frase;
-      if (frase.textContent !== texto) frase.textContent = texto;
+      if (frase.textContent !== texto) {
+        const primera = frase.textContent === '';
+        frase.textContent = texto;
+        if (!primera) animar(frase, 'entra');
+      }
       canvas.setAttribute('aria-label', `Clarita, una perrita pequeña de pelo rizado chocolate con barbita blanca. ${texto}`);
       chip.textContent = `${estado.dormida ? 'Dormitorio' : 'Laguna'} · ${noche ? 'Noche' : 'Día'}`;
 
@@ -123,7 +141,18 @@ export function crearInterfaz(app: HTMLElement, alAccionar: (a: Accion) => void)
       const sobreAcento = estilo.getPropertyValue('--g-on-accent').trim();
       for (const m of medidores) {
         const v = Math.round(estado[m.clave]);
-        const encendidas = Math.min(10, Math.max(0, Math.ceil((v - MIN) / ((MAX - MIN) / 10))));
+        const encendidas = celdasEncendidas(v);
+        if (m.previo !== undefined) {
+          const antes = celdasEncendidas(m.previo);
+          for (let i = antes; i < encendidas; i++) {
+            const c = m.cuadros[i];
+            if (!c) continue;
+            c.style.setProperty('--k', String(i - antes));
+            animar(c, 'sube');
+          }
+          if (m.clave === 'carino' && v > m.previo) animar(m.ico, 'pulso');
+        }
+        m.previo = v;
         m.cuadros.forEach((c, i) => c.classList.toggle('on', i < encendidas));
         m.celdas.setAttribute('aria-valuenow', String(v));
         m.valor.textContent = `${v}%`;

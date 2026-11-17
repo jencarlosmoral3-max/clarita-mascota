@@ -169,8 +169,37 @@ test('al dormir la transición pasa por pasos > 0 y vuelve a 0', async ({ page }
   expect(await canvas.getAttribute('data-transicion')).toBe('0');
 });
 
+const comidaBaja = (ahora: number): Record<string, unknown> => ({ version: 1, comida: 20, energia: 80, higiene: 80, diversion: 80, carino: 50, dormida: false, pijama: false, ultimaVez: ahora }); // autocontenida: se serializa
+const animaciones = (page: Page, soloCorriendo = false): Promise<number> =>
+  page.evaluate((s) => document.getAnimations().filter((a) => !s || a.playState === 'running').length, soloCorriendo);
+
+test('Alimentar anima la interfaz y el medidor sube', async ({ page }) => {
+  await abrir(page, comidaBaja);
+  await page.getByRole('button', { name: 'Alimentar' }).click();
+  await expect.poll(() => animaciones(page)).toBeGreaterThan(0);
+  expect(await valor(page, 'Comida')).toBe(100);
+});
+
+test('los efectos se acumulan y desaparecen', async ({ page }) => {
+  await abrir(page, diversionBaja);
+  const canvas = page.getByRole('img', { name: /Clarita/ });
+  const fx = async () => Number(await canvas.getAttribute('data-fx'));
+  await page.getByRole('button', { name: 'Bañar' }).click();
+  const uno = await fx();
+  await page.getByRole('button', { name: 'Acariciar' }).click();
+  await expect.poll(fx).toBeGreaterThan(uno);
+  await expect.poll(fx, { timeout: 4000 }).toBe(0);
+});
+
 test.describe('movimiento reducido', () => {
   test.use({ reducedMotion: 'reduce' });
+  test('sin animaciones de interfaz al accionar', async ({ page }) => {
+    await abrir(page, comidaBaja);
+    await page.getByRole('button', { name: 'Alimentar' }).click();
+    expect(await valor(page, 'Comida')).toBe(100);
+    expect(await animaciones(page, true)).toBe(0);
+  });
+
   test('sin reloj: el frame no cambia y el efecto se borra solo', async ({ page }) => {
     await abrir(page, diversionBaja);
     const canvas = page.getByRole('img', { name: /Clarita/ });

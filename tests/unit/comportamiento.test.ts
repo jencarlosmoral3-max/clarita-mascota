@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { avanzar } from '../../src/escena/comportamiento';
-import { ANIM_MAX_TICKS_POR_VUELTA, ANIM_TICK_MS } from '../../src/logica/balance';
+import { agregarParticulas, avanzar, pasoParticulas, type Particula } from '../../src/escena/comportamiento';
+import { ANIM_MAX_TICKS_POR_VUELTA, ANIM_TICK_MS, FX_MAX } from '../../src/logica/balance';
 
 describe('avanzar', () => {
   it('dt 0: sin ticks', () => expect(avanzar(0, 0)).toEqual([0, 0]));
@@ -17,5 +17,33 @@ describe('avanzar', () => {
     expect(avanzar(20, -500)).toEqual([0, 20]);
     expect(avanzar(20, NaN)).toEqual([0, 20]);
     expect(avanzar(20, Infinity)).toEqual([0, 20]);
+  });
+});
+
+describe('pasoParticulas', () => {
+  const p = (extra: Partial<Particula> = {}): Particula => ({ k: 'miga', x: 10, y: 20, vx: 1, vy: -2, g: 0.5, vida: 3, ...extra });
+  it('mueve, acumula gravedad y descuenta vida', () => {
+    const [a] = pasoParticulas([p()], 100);
+    expect(a).toMatchObject({ x: 11, y: 18, vy: -1.5, vida: 2 });
+    expect(pasoParticulas([a as Particula], 100)[0]).toMatchObject({ y: 16.5, vy: -1 });
+  });
+  it('elimina cuando la vida llega a 0', () => {
+    expect(pasoParticulas([p({ vida: 1 })], 100)).toEqual([]);
+    expect(pasoParticulas([p({ vida: 2 }), p({ vida: 1 })], 100)).toHaveLength(1);
+  });
+  it('rebota en el suelo invirtiendo vy', () => {
+    const [a] = pasoParticulas([p({ k: 'ball', y: 99, vy: 2, g: 0, rebota: true })], 100);
+    expect(a).toMatchObject({ y: 100, vy: -2 });
+  });
+  it('sin rebota atraviesa el suelo; con tope se detiene', () => {
+    expect(pasoParticulas([p({ y: 99, vy: 2, g: 0 })], 100)[0]?.y).toBe(101);
+    expect(pasoParticulas([p({ y: 99, vy: 2, g: 0, tope: 100 })], 100)[0]).toMatchObject({ y: 100, vy: 0 });
+  });
+  it('agregar respeta el tope y descarta las más viejas', () => {
+    const viejas = Array.from({ length: FX_MAX }, (_, i) => p({ x: i }));
+    const r = agregarParticulas(viejas, [p({ x: 500 }), p({ x: 501 })]);
+    expect(r).toHaveLength(FX_MAX);
+    expect(r[0]?.x).toBe(2);
+    expect(r.at(-1)?.x).toBe(501);
   });
 });

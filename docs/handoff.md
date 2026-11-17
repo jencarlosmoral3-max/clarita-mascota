@@ -17,11 +17,17 @@
 | H5 UI e integración | Cerrado, PR #5. Gate de UI corrido en M4 (PR #14) |
 | H6 iconos, actualización, entrega | Iconos cerrados, PR #9. Falta prueba de actualización y checklist en iPhone real |
 
-## Plan activo: animaciones y dinamismo
+## Plan cerrado: animaciones y dinamismo (2026-11-16)
 
 **[Animaciones y dinamismo](plan-animaciones.md)** — aprobado por el CTO el 2026-11-16. Eligió los
 cuatro frentes (Clarita reacciona, se mueve sola, escenario vivo, interfaz con rebote) y validar el
 arte con vista previa antes de integrar.
+
+**Resultado**: los cinco hitos mergeados y en producción (`56cc489`). Verificado en vivo con WebKit
+(perfil iPhone 13) tras el deploy: en 45 s Clarita pasó por reposo, caminar, rascarse y mirar, con
+29 posiciones x distintas; Alimentar dispara `comer` y vuelve a reposo; sin errores de consola. El
+CTO vio la vista previa final y la dio por buena ("súper mejor quedaron"). Pendiente fuera del
+plan: verlo en el iPhone real.
 
 | Hito | Estado |
 |---|---|
@@ -66,7 +72,6 @@ arte con vista previa antes de integrar.
 - Juicio del chairman: rascarse se lee mejor pero la pata es chica; sacudirse tiene poca amplitud.
 - No verificado: animaciones en iPhone real, toque sobre Clarita mientras camina (sin test en
   movimiento), `/ponytail-review` como skill (revisión manual del diff). Codex: no verificado.
-- La rama local `m2-arte` y su worktree quedaron obsoletos (todo va en `m5-comportamiento`).
 
 ### M3 escenario vivo (PR #13)
 

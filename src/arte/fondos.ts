@@ -9,6 +9,8 @@ export function nubes(W: number, H: number): Nube[]{
 // Mezcla dither Bayer 4x4: true si el píxel (x, y) ya muestra el fondo nuevo en el paso 0..4.
 const BAYER=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
 export function mascaraDither(x: number,y: number,paso: number): boolean{return (BAYER[(y&3)*4+(x&3)]??0)<paso*4}
+// Índices de la laguna que son cielo (degradado 0..3, estrellas 18 y 21, luna/sol 20): lo que una nube puede tapar.
+export function esCielo(v: number): boolean{return v<=3||v===18||v===20||v===21}
 export function laguna(W: number, H: number): Uint8Array{
   const g=new Uint8Array(W*H),r=rng(5),set=(x: number,y: number,v: number)=>{if(x>=0&&x<W&&y>=0&&y<H)g[y*W+x]=v};
   const hz=Math.floor(H*.5);

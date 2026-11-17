@@ -1,4 +1,4 @@
-import { dormitorio, laguna, mascaraDither, nubes } from '../arte/fondos';
+import { dormitorio, esCielo, laguna, mascaraDither, nubes, type Nube } from '../arte/fondos';
 import { FXP, PLUSH_PAL, SCN, paletaSprite } from '../arte/paleta';
 import { FX, PLUSH, SEQ, SP, frameEn, type Efecto, type Frame, type Grilla } from '../arte/sprites';
 import { animo } from '../logica/animo';
@@ -24,7 +24,7 @@ const ANCHO_MIN = 96; // píxeles lógicos de ancho (el sprite mide 48): en un i
 const ALTO_MIN = 56; // el sprite (48) más aire arriba; si la escena es baja, la escala baja
 
 type Brillo = [x: number, y: number, fase: number, alt: number]; // alt: índice de paleta al que cambia
-type Fondo = { clave: string; lugar: string; c: HTMLCanvasElement; estrellas: Brillo[]; agua: Brillo[] };
+type Fondo = { clave: string; lugar: string; c: HTMLCanvasElement; estrellas: Brillo[]; agua: Brillo[]; cielo?: Uint8Array; nubes?: Nube[] }; // cielo/nubes: solo la laguna
 
 type Particula = { k: Efecto; x: number; y: number; vy: number };
 
@@ -88,11 +88,13 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
       const bp = SCN[lugar][momento];
       const estrellas: Brillo[] = [];
       const agua: Brillo[] = [];
+      const cielo = lugar === 'laguna' ? new Uint8Array(W * H) : undefined;
       for (let y = 0; y < H; y++)
         for (let x = 0; x < W; x++) {
           const v = g[y * W + x] ?? 0;
           fctx.fillStyle = bp[v] ?? '#000';
           fctx.fillRect(x, y, 1, 1);
+          if (cielo && esCielo(v)) cielo[y * W + x] = 1;
           const estrella = lugar === 'laguna' ? v === 18 || v === 21 : v === 17 || v === 18;
           // La estrella se apaga al color del cielo vecino; la onda destella al tono claro 15.
           if (momento === 'night' && estrella) {
@@ -105,7 +107,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
         paso = 1;
         pasoTicks = 0;
       }
-      fondo = { clave, lugar, c, estrellas, agua };
+      fondo = { clave, lugar, c, estrellas, agua, cielo, nubes: cielo && nubes(W, H) };
     }
     // Reducido: t no avanza y todo queda como en el fondo original (nubes en su sitio, sin titileo).
     const tt = reducir.matches ? 0 : t;
@@ -124,13 +126,17 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     } else {
       loCtx.drawImage(fondo.c, 0, 0);
       const bp = SCN[lugar][momento];
-      if (lugar === 'laguna') {
+      if (fondo.cielo && fondo.nubes) {
+        // Píxel a píxel y solo sobre cielo: las montañas y la orilla tapan la nube.
         loCtx.fillStyle = bp[19] ?? '#fff';
-        for (const n of nubes(W, H))
+        for (const n of fondo.nubes)
           for (const [rx, ry, w] of n.rects) {
-            const x0 = (((n.x + rx + dx) % W) + W) % W;
-            loCtx.fillRect(x0, n.y + ry, w, 1);
-            if (x0 + w > W) loCtx.fillRect(x0 - W, n.y + ry, w, 1); // envoltura sin salto
+            const y = n.y + ry;
+            if (y < 0 || y >= H) continue;
+            for (let i = 0; i < w; i++) {
+              const x = (((n.x + rx + dx + i) % W) + W) % W; // envoltura sin salto
+              if (fondo.cielo[y * W + x]) loCtx.fillRect(x, y, 1, 1);
+            }
           }
       }
       const brillar = (lista: Brillo[], periodo: number, fases: number) => {

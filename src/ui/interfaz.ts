@@ -62,9 +62,9 @@ function animar(e: HTMLElement, clase: string): void {
 
 const celdasEncendidas = (v: number): number => Math.min(10, Math.max(0, Math.ceil((v - MIN) / ((MAX - MIN) / 10))));
 
-type Opciones = { alAccionar: (a: Accion) => void; sonidoActivo: boolean; alSonido: () => boolean };
+type Opciones = { alAccionar: (a: Accion) => void; sonidoActivo: boolean; alSonido: () => boolean; alGuia: () => void };
 
-export function crearInterfaz(app: HTMLElement, { alAccionar, sonidoActivo, alSonido }: Opciones) {
+export function crearInterfaz(app: HTMLElement, { alAccionar, sonidoActivo, alSonido, alGuia }: Opciones) {
   const raiz = el('div', 'juego');
   const titulo = el('h1', undefined, 'Clarita');
   const chip = el('span', 'chip');
@@ -72,7 +72,7 @@ export function crearInterfaz(app: HTMLElement, { alAccionar, sonidoActivo, alSo
   frase.setAttribute('aria-live', 'polite');
   const cab = el('header', 'cabecera');
   const fila = el('div', 'fila');
-  const botonesCab = el('div', 'cab-botones'); // M3 añade aquí el botón de la guía
+  const botonesCab = el('div', 'cab-botones');
   const sonidoBtn = el('button', 'cab-btn');
   sonidoBtn.type = 'button';
   sonidoBtn.setAttribute('aria-label', 'Sonido');
@@ -81,7 +81,13 @@ export function crearInterfaz(app: HTMLElement, { alAccionar, sonidoActivo, alSo
   const pintarSonido = (activo: boolean): void => sonidoBtn.setAttribute('aria-pressed', String(activo));
   pintarSonido(sonidoActivo);
   sonidoBtn.addEventListener('click', () => pintarSonido(alSonido()));
-  botonesCab.append(sonidoBtn);
+  const guiaBtn = el('button', 'cab-btn');
+  guiaBtn.type = 'button';
+  guiaBtn.setAttribute('aria-label', 'Ver guía');
+  const guiaIco = icono();
+  guiaBtn.append(guiaIco);
+  guiaBtn.addEventListener('click', () => alGuia());
+  botonesCab.append(sonidoBtn, guiaBtn);
   fila.append(titulo, chip, botonesCab);
   cab.append(fila, frase);
 
@@ -185,6 +191,7 @@ export function crearInterfaz(app: HTMLElement, { alAccionar, sonidoActivo, alSo
         pintarIcono(ico, ic, pulsado ? sobreAcento : tinta);
       }
       pintarIcono(sonidoIco, 'nota', tinta);
+      pintarIcono(guiaIco, 'ayuda', tinta);
       escena.pintar(estado, ahora);
     },
     efecto(tipo: EfectoAccion): void {

@@ -70,6 +70,7 @@ canvas { touch-action: none; }
 .cab-btn canvas { width: 24px; height: 24px; image-rendering: pixelated; }
 .cab-btn[aria-pressed='false'] canvas { opacity: 0.4; }
 .cab-btn[aria-pressed='false']::after { content: ''; position: absolute; left: 8px; right: 8px; top: 50%; border-top: 3px solid var(--g-accent); transform: rotate(-45deg); }
+.cab-btn:active { transform: translateY(2px); }
 .cab-btn:focus-visible { outline: 3px solid var(--g-accent); outline-offset: 2px; }
 .frase { margin: 0; color: var(--g-ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .escena { flex: 1 1 0; min-height: 0; position: relative; overflow: hidden; background: #0f4fc4; }
@@ -104,6 +105,15 @@ canvas { touch-action: none; }
 .medidor canvas.pulso { animation: pop var(--t-pulso) steps(3) both; }
 .celdas i.sube { animation: celda var(--t-celda) steps(2) calc(var(--k, 0) * var(--t-celda-paso)) backwards; }
 .frase.entra { animation: entra var(--t-frase) steps(3) backwards; }
+/* Guía: no modal. El foco oscurece todo salvo el objetivo con un box-shadow enorme; los toques lo atraviesan. */
+.tuto-foco { position: fixed; z-index: 10; pointer-events: none; box-sizing: border-box; border: 3px solid var(--g-accent); border-radius: 8px; box-shadow: 0 0 0 100vmax rgba(8, 12, 43, 0.6); }
+.tuto-globo { position: fixed; z-index: 11; box-sizing: border-box; display: grid; gap: 8px; padding: 12px; background: var(--g-panel); color: var(--g-ink); border: 2px solid var(--g-accent); border-radius: 8px; box-shadow: 0 3px 0 var(--g-edge); }
+.tuto-paso { font: 700 13px var(--pixel); color: var(--g-accent); }
+.tuto-texto { margin: 0; font-size: 15px; line-height: 1.4; }
+.tuto-acciones { display: flex; justify-content: flex-end; gap: 8px; }
+.tuto-btn { flex-direction: row; min-height: 44px; min-width: 88px; padding: 6px 14px; }
+.tuto-btn[hidden] { display: none; }
+.tuto-sig { background: var(--g-accent); color: var(--g-on-accent); }
 @keyframes pop { 50% { transform: scale(1.25); } }
 @keyframes celda { 0% { opacity: 0; } 40% { opacity: 1; background: var(--g-face); } }
 @keyframes entra { from { opacity: 0; transform: translateY(3px); } }

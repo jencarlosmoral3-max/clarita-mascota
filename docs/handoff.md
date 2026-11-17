@@ -2,7 +2,7 @@
 
 Última actualización: 2026-11-16
 
-## Plan activo: costos cruzados, sonido y tutorial (2026-11-16)
+## Plan cerrado: costos cruzados, sonido y tutorial (2026-11-17)
 
 **[Costos cruzados, sonido y tutorial guiado](plan-costos-sonido-tutorial.md)** — aprobado por el CTO el 2026-11-16.
 
@@ -13,8 +13,14 @@ Cambios del chairman sobre esas respuestas, por crítica de Opus, incluidos en e
 | Hito | Estado |
 |---|---|
 | M1 balance (`m1-balance`) | Cerrado, PR #18. 202/202 unit, 30/30 e2e |
-| M2 sonido (`m2-sonido`) | Cerrado en PR propio. WebAudio sintetizado, `src/audio/sonido.ts`, botón Sonido en cabecera, clave `clarita.sonido`. 208/208 unit, 31/31 e2e. Revisión: arreglados clic del agua al reanudar y carrera de `resume()` con sonido apagado. **No verificado: nadie oyó los sonidos; iPhone real (desbloqueo, interruptor de silencio, `audioSession`)** |
-| M3 tutorial (`m3-tutorial`) | Pendiente, depende de M2 |
+| M2 sonido (`m2-sonido`) | Cerrado, PR #19. WebAudio sintetizado, `src/audio/sonido.ts`, botón Sonido en cabecera, clave `clarita.sonido`. 208/208 unit, 31/31 e2e. Revisión: arreglados clic del agua al reanudar y carrera de `resume()` con sonido apagado. **No verificado: nadie oyó los sonidos; iPhone real (desbloqueo, interruptor de silencio, `audioSession`)** |
+| M3 tutorial (`m3-tutorial`) | Cerrado, PR #20. `src/ui/tutorial.ts`, no modal, 7 pasos, botón "Ver guía" en cabecera, clave `clarita.tutorial`. 208/208 unit, 40/40 e2e (9 del tutorial). Gate UI `web-design-guidelines` corrido: arreglados nombre del diálogo, orden de lectura, borde de noche, `:active` de cabecera, "Saltar guía". `/code-review`: bloqueo de Siguiente si la acción deja de ser posible, arreglado con `actualizar()` en cada pintado |
+
+Desvío de proceso (2026-11-17): el PR #19 se mergeó sin esperar el CI porque `gh pr checks` corrió antes de que GitHub registrara el check ("no checks reported") y el merge iba encadenado. El CI del PR, el de `main` y el deploy terminaron verdes después. Desde el PR #20 se espera a que el check exista antes de mirarlo.
+
+No aplicado (baja): margen de safe-area del globo en horizontal; el juego se usa en vertical.
+
+No verificado del plan entero: nadie oyó los sonidos; iPhone real (audio, interruptor de silencio, VoiceOver con el tutorial, feel táctil); balance jugado durante días; Codex en ningún PR.
 
 ## Plan base
 

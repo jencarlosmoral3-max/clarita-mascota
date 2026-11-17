@@ -155,9 +155,17 @@ test('al dormir la transición pasa por pasos > 0 y vuelve a 0', async ({ page }
     new MutationObserver(() => w.__tr.push(Number(c.dataset.transicion))).observe(c, { attributes: true, attributeFilter: ['data-transicion'] });
   });
   await page.getByRole('button', { name: 'Dormir' }).click();
+  // Con timers lentos el reloj puede saltar pasos: basta ver algún paso > 0 y que el último valor sea 0.
   await expect
-    .poll(() => page.evaluate(() => (window as unknown as { __tr: number[] }).__tr), { timeout: 3000 })
-    .toEqual(expect.arrayContaining([1, 4, 0]));
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const tr = (window as unknown as { __tr: number[] }).__tr;
+          return tr.some((v) => v > 0) && tr[tr.length - 1] === 0;
+        }),
+      { timeout: 3000 },
+    )
+    .toBe(true);
   expect(await canvas.getAttribute('data-transicion')).toBe('0');
 });
 

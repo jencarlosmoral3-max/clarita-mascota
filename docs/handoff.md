@@ -26,10 +26,10 @@ arte con vista previa antes de integrar.
 | Hito | Estado |
 |---|---|
 | M1 motor (reloj 100 ms, SEQ con duración, sprites cacheados) | Cerrado, PR #12 |
-| M2 arte por parches + vista previa | En curso, rama `m2-arte`. Compuerta: aprobación del CTO |
+| M2 arte por parches + vista previa | Cerrado, PR #16. Aprobado por el CTO el 2026-11-16 |
 | M3 escenario vivo | Cerrado, PR #13 |
 | M4 interfaz y partículas | Cerrado, PR #14. Incluye el gate de UI pendiente desde H5 |
-| M5 comportamiento integrado | No iniciado. Depende de M2 aprobado |
+| M5 comportamiento integrado | Cerrado, PR #16 |
 
 ### M1 motor (PR #12)
 
@@ -46,14 +46,27 @@ arte con vista previa antes de integrar.
 - **Pendiente para M5**: `efecto()` y el peluche usan la x centrada de `geo()`, no `sprX`.
 - No verificado: pausa real con `document.hidden`, rendimiento en iPhone. Codex: no verificado.
 
-### M2 arte (en espera del CTO)
+### M2 arte y M5 comportamiento (PR #16)
 
-- Rama local `m2-arte` (worktree `.claude/worktrees/agent-a673d69fb0facf65c`), sin push, ya
-  rebasada sobre `main` tras M4 (`bf01ee5`): typecheck, 164 unit, build y 25 e2e pasan.
-- Vista previa publicada: https://claude.ai/artifact/RLJNXzwGKt55ddg3fEjjDk (se regenera con
-  `npm run vista-previa` en esa rama).
-- Juicio del chairman: bien cola, mirar, feliz, comer; flojas rascarse, trote, peluche, bostezo.
-- Sin reviews todavía. No se integra ni se mergea hasta que el CTO apruebe.
+- **Aprobación del CTO (2026-11-16, en sesión)**: "apruebo tu arte, me interesa que lo pulas".
+  Después pidió mejorar rascarse ("me gusta el rascarse, solo quería que lo mejores") y que
+  sacudirse incline la cabeza de lado a lado con los ojos cerrados. Tres rondas de arte.
+- Arte por parches (`PARCHES`, `COMPUESTOS` en `src/arte/sprites.ts`), sin frames completos nuevos.
+  `COMPUESTOS` admite `ladeo` (cabeza inclinada por código: cizalla de filas) y parches `despues`.
+  Color 23 de `PAL` = lengua. Secuencias: caminar, sentada, cola, mirar, rascarse, comer, jugar,
+  sacudirse, feliz, bostezo. `npm run vista-previa` genera `vista-previa.html` (fuera de git).
+- Comportamiento: máquina de estados pura en `src/escena/comportamiento.ts` (`crear`, `paso`,
+  `reaccionar`, `vista`). En reposo pasea y hace actos al azar (`OCIO_PESOS` en `balance.ts`; peso 0
+  desactiva un acto). Triste no pasea. Acciones disparan comer, jugar, sacudirse y feliz. Al dormir:
+  transición, bostezo y dormida. `data-anim` en el canvas. La sombra no sube con el cuerpo.
+- Verificado: typecheck, 185/185 unit, build, 30/30 e2e, capturas de paseo, bostezo, comer y jugar.
+- `/code-review`: aplicados masticado sincronizado con el hueso, reacción que no se corta al cambiar
+  el ánimo, paseos que no acaban en el borde, sombra fija, Z solo dormida, duplicados y parche
+  muerto. Rechazado: velocidad de paseo y duraciones de `SEQ` fuera de `balance.ts` (dato de arte).
+- Juicio del chairman: rascarse se lee mejor pero la pata es chica; sacudirse tiene poca amplitud.
+- No verificado: animaciones en iPhone real, toque sobre Clarita mientras camina (sin test en
+  movimiento), `/ponytail-review` como skill (revisión manual del diff). Codex: no verificado.
+- La rama local `m2-arte` y su worktree quedaron obsoletos (todo va en `m5-comportamiento`).
 
 ### M3 escenario vivo (PR #13)
 
@@ -94,7 +107,7 @@ arte con vista previa antes de integrar.
 - **El juego es jugable en local**: `npm run dev` (en escritorio se juega directo; en iPhone sin
   instalar muestra la pantalla de instalación). Medidores, 6 acciones, tocar a Clarita, pijama,
   día/noche, dormitorio al dormir, animación y efectos, guardado local, offline.
-- `main` verificado: `npm run typecheck` limpio, `npm test` 100/100, `npm run e2e` 25/25 (WebKit,
+- `main` verificado: `npm run typecheck` limpio, `npm test` 185/185, `npm run e2e` 30/30 (WebKit,
   perfil iPhone 13).
 - Repo: GitHub público `jencarlosmoral3-max/clarita-mascota`. `gh` y `git push/fetch` se corren con
   `GH_TOKEN=$(gh auth token -u jencarlosmoral3-max)`; la cuenta activa global de `gh` sigue siendo
@@ -131,7 +144,7 @@ Prueba en el iPhone real (pendiente 1) y prueba de actualización del service wo
 instalada, mergear cualquier cambio visible y comprobar que al volver de segundo plano carga la
 versión nueva sin perder la partida. Antes de entregar: Codex sobre `src/`.
 
-Plan de animaciones: falta que el CTO apruebe la vista previa de M2; después M5.
+Plan de animaciones: M1 a M5 mergeados. Falta verlo en el iPhone real.
 
 ## H6 iconos (2026-11-16, PR #9)
 

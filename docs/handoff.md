@@ -2,7 +2,21 @@
 
 Última actualización: 2026-11-16
 
-## Plan activo
+## Plan activo: costos cruzados, sonido y tutorial (2026-11-16)
+
+**[Costos cruzados, sonido y tutorial guiado](plan-costos-sonido-tutorial.md)** — aprobado por el CTO el 2026-11-16.
+
+Respuestas del CTO antes de aprobar: fondo = ambiente (no melodía); con energía bajo 20 no puede jugar; tutorial mixto (pulsar botón real en Alimentar, Jugar y Bañar).
+
+Cambios del chairman sobre esas respuestas, por crítica de Opus, incluidos en el plan aprobado: cuidados deshabilitados con medidor en 95 o más (cierra una granja de cariño infinito), y Jugar sube 60 en vez de 100.
+
+| Hito | Estado |
+|---|---|
+| M1 balance (`m1-balance`) | En curso |
+| M2 sonido (`m2-sonido`) | Pendiente |
+| M3 tutorial (`m3-tutorial`) | Pendiente, depende de M2 |
+
+## Plan base
 
 **[Mascota virtual de Clarita](plan-mascota-clarita.md)** — aprobado por el CTO el 2026-11-16.
 

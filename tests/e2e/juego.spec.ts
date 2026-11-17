@@ -202,6 +202,50 @@ test('los efectos se acumulan y desaparecen', async ({ page }) => {
   await expect.poll(fx).toBe(0);
 });
 
+const attr = (page: Page, a: string): Promise<string> => page.getByRole('img', { name: /Clarita/ }).getAttribute(a).then((v) => v ?? '');
+
+test('Clarita camina sola en reposo (reloj controlado)', async ({ page }) => {
+  await page.clock.install();
+  await abrir(page, base);
+  const xs = new Set<string>([await attr(page, 'data-x')]);
+  for (let i = 0; i < 60 && xs.size < 3; i++) {
+    await page.clock.runFor(1000);
+    xs.add(await attr(page, 'data-x'));
+  }
+  expect(xs.size).toBeGreaterThanOrEqual(3);
+});
+
+test('triste no camina', async ({ page }) => {
+  await page.clock.install();
+  await abrir(page, diversionBaja);
+  const x0 = await attr(page, 'data-x');
+  await page.clock.runFor(60000);
+  expect(await attr(page, 'data-x')).toBe(x0);
+  expect(await attr(page, 'data-anim')).toBe('triste');
+});
+
+test('Alimentar pasa por comer', async ({ page }) => {
+  await page.clock.install();
+  await abrir(page, base);
+  await page.getByRole('button', { name: 'Alimentar' }).click();
+  expect(await attr(page, 'data-anim')).toBe('comer');
+  await page.clock.runFor(3000);
+  expect(await attr(page, 'data-anim')).not.toBe('comer');
+});
+
+test('Dormir pasa por bostezo y termina en dormida', async ({ page }) => {
+  await page.clock.install();
+  await abrir(page, base);
+  await page.getByRole('button', { name: 'Dormir' }).click();
+  const vistos = new Set<string>();
+  for (let i = 0; i < 30; i++) {
+    vistos.add(await attr(page, 'data-anim'));
+    await page.clock.runFor(100);
+  }
+  expect(vistos.has('bostezo')).toBe(true);
+  expect(await attr(page, 'data-anim')).toBe('dormida');
+});
+
 test.describe('movimiento reducido', () => {
   test.use({ reducedMotion: 'reduce' });
   test('sin animaciones de interfaz al accionar', async ({ page }) => {
@@ -220,6 +264,14 @@ test.describe('movimiento reducido', () => {
     await page.getByRole('button', { name: 'Acariciar' }).click();
     await expect.poll(async () => Number(await canvas.getAttribute('data-fx'))).toBeGreaterThan(0);
     await expect.poll(async () => Number(await canvas.getAttribute('data-fx')), { timeout: 3000 }).toBe(0);
+  });
+
+  test('Clarita no se mueve (data-x constante)', async ({ page }) => {
+    await page.clock.install();
+    await abrir(page, base);
+    const x0 = await attr(page, 'data-x');
+    await page.clock.runFor(60000);
+    expect(await attr(page, 'data-x')).toBe(x0);
   });
 
   test('las nubes quedan quietas y Dormir cambia al instante', async ({ page }) => {

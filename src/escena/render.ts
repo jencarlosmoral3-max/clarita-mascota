@@ -1,9 +1,8 @@
 import { dormitorio, esCielo, laguna, mascaraDither, nubes, type Nube } from '../arte/fondos';
 import { FXP, PLUSH_PAL, SCN, paletaSprite } from '../arte/paleta';
-import { FX, PLUSH, SEQ, SP, frameEn, type Frame, type Grilla } from '../arte/sprites';
+import { FX, PLUSH, SEQ, SP, type Grilla } from '../arte/sprites';
 import { animo } from '../logica/animo';
 import {
-  ANIM_BOB_TICKS,
   ANIM_TICK_MS,
   ANIM_Z_TICKS,
   DESTELLO_FASES,
@@ -17,6 +16,7 @@ import {
   FX_MIGA,
   FX_PELOTA,
   FX_QUITAR_MS,
+  MARGEN_X,
   NUBES_TICKS_POR_PX,
   TITILEO_FASES,
   TITILEO_PERIODO_TICKS,
@@ -24,9 +24,9 @@ import {
 } from '../logica/balance';
 import type { Estado } from '../logica/estado';
 import { esDeNoche } from '../logica/tiempo';
-import { agregarParticulas, avanzar, pasoParticulas, type Particula } from './comportamiento';
+import { agregarParticulas, avanzar, crear, paso as pasoComp, pasoParticulas, reaccionar, vista, type Comp, type Particula, type Reaccion } from './comportamiento';
 
-export type EfectoAccion = 'alimentar' | 'jugar' | 'banar' | 'acariciar';
+export type EfectoAccion = Reaccion;
 
 const ANCHO_MIN = 96; // píxeles lógicos de ancho (el sprite mide 48): en un iPhone de 3x da el mismo encuadre que el mock
 const ALTO_MIN = 56; // el sprite (48) más aire arriba; si la escena es baja, la escala baja
@@ -68,6 +68,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
   let ultimo = 0;
   let acum = 0;
   let sprX = 0;
+  let comp: Comp | undefined;
   let fx: Particula[] = [];
   let quitar = 0;
 
@@ -75,6 +76,9 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     const base = Math.floor(H * (laguna_ ? 0.84 : 0.9));
     return { sx: Math.floor((W - 48) / 2), sy: base - 45, base };
   };
+
+  // Rango de x del sprite (48 px) con margen a cada lado.
+  const rango = () => ({ xmin: MARGEN_X, xmax: Math.max(MARGEN_X, W - 48 - MARGEN_X) });
 
   function dibujar(): void {
     if (!ctx || !loCtx || !estado || !W || !H) return;
@@ -169,15 +173,19 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
 
     const { sx, sy, base } = geo(lugar === 'laguna');
     const an = animo(estado).animacion;
-    const secuencia = SEQ[an];
-    sprX = sx;
-    const bob = fx.some((f) => f.k === 'ball' || f.k === 'bone') && (an === 'reposo' || an === 'triste');
-    const frame: Frame = bob ? (Math.floor(t / ANIM_BOB_TICKS) % 2 ? 'idle1' : 'idle0') : frameEn(secuencia, t);
+    comp ??= crear(sx, an);
+    // Si el ánimo cambió desde el último tick (Dormir/Despertar), se adelanta ya: sin un cuadro con la x vieja.
+    if (comp.anim !== an) comp = pasoComp(comp, { animacion: an, ...rango() }, Math.random);
+    // Reducido: quieta en el centro con el frame base de su ánimo.
+    const v = reducir.matches ? { frame: SEQ[an][0]?.f ?? 'idle0', x: sx, dx: 0, dy: 0, espejo: false, anim: an } : vista(comp);
+    sprX = v.x;
+    const frame = v.frame;
     if (lugar === 'dormitorio') blit(loCtx, PLUSH, PLUSH_PAL, sprX - 9, base - 6);
     if (pal?.pijama !== estado.pijama) pal = { pijama: estado.pijama, p: paletaSprite(estado.pijama) };
     canvas.dataset.frame = frame;
     canvas.dataset.fx = String(fx.length);
     canvas.dataset.x = String(sprX);
+    canvas.dataset.anim = v.anim;
     const ck = `${frame}|${estado.pijama}`;
     let sc = sprites.get(ck);
     if (!sc) {
@@ -192,8 +200,14 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
         sc = undefined;
       }
     }
-    if (sc) loCtx.drawImage(sc, sprX, sy);
-    else blit(loCtx, SP[frame], pal.p, sprX, sy);
+    if (sc && v.espejo) {
+      loCtx.save();
+      loCtx.translate(sprX + v.dx + 48, sy + v.dy);
+      loCtx.scale(-1, 1);
+      loCtx.drawImage(sc, 0, 0);
+      loCtx.restore();
+    } else if (sc) loCtx.drawImage(sc, sprX + v.dx, sy + v.dy);
+    else blit(loCtx, SP[frame], pal.p, sprX + v.dx, sy + v.dy);
     for (const f of fx) if (!f.espera) blit(loCtx, FX[f.k], FXP, Math.round(f.x), Math.round(f.y));
     if (an === 'dormida') {
       const p = Math.floor(t / ANIM_Z_TICKS) % 3;
@@ -220,6 +234,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
     canvas.height = H * s;
     lo.width = W;
     lo.height = H;
+    if (comp) comp = { ...comp, x: Math.min(Math.max(comp.x, rango().xmin), rango().xmax) };
     canvas.dataset.escala = String(s);
     canvas.style.width = `${(W * s) / dpr}px`;
     canvas.style.height = `${(H * s) / dpr}px`;
@@ -237,6 +252,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
         trans = undefined;
       }
     }
+    if (comp && estado) comp = pasoComp(comp, { animacion: animo(estado).animacion, ...rango() }, Math.random);
     if (fx.length && estado) fx = pasoParticulas(fx, geo(!estado.dormida).base - 6);
   }
 
@@ -313,6 +329,7 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
       const { sy, base } = geo(!estado.dormida);
       const sx = sprX;
       const q = reducir.matches;
+      if (comp && !q) comp = reaccionar(comp, tipo);
       const nuevas: Particula[] = [];
       const add = (k: Particula['k'], x: number, y: number, vx: number, vy: number, g: number, vida: number, extra?: Partial<Particula>) =>
         nuevas.push({ k, x, y, vx, vy, g, vida, ...extra });

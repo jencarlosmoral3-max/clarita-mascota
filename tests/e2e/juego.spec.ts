@@ -135,6 +135,32 @@ test('la animación corre y los efectos desaparecen', async ({ page }) => {
   await expect.poll(async () => Number(await canvas.getAttribute('data-fx')), { timeout: 4000 }).toBe(0);
 });
 
+test('las nubes derivan con el tiempo (reloj controlado)', async ({ page }) => {
+  await page.clock.install();
+  await abrir(page);
+  const canvas = page.getByRole('img', { name: /Clarita/ });
+  const n0 = Number(await canvas.getAttribute('data-nubes'));
+  await page.clock.runFor(5000);
+  await expect.poll(async () => Number(await canvas.getAttribute('data-nubes'))).toBeGreaterThan(n0);
+});
+
+test('al dormir la transición pasa por pasos > 0 y vuelve a 0', async ({ page }) => {
+  await abrir(page, base);
+  const canvas = page.getByRole('img', { name: /Clarita/ });
+  // Los pasos duran ~100 ms: se registran con un observer en vez de muestrear.
+  await page.evaluate(() => {
+    const c = document.querySelector('canvas[role="img"]') as HTMLCanvasElement;
+    const w = window as unknown as { __tr: number[] };
+    w.__tr = [];
+    new MutationObserver(() => w.__tr.push(Number(c.dataset.transicion))).observe(c, { attributes: true, attributeFilter: ['data-transicion'] });
+  });
+  await page.getByRole('button', { name: 'Dormir' }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __tr: number[] }).__tr), { timeout: 3000 })
+    .toEqual(expect.arrayContaining([1, 4, 0]));
+  expect(await canvas.getAttribute('data-transicion')).toBe('0');
+});
+
 test.describe('movimiento reducido', () => {
   test.use({ reducedMotion: 'reduce' });
   test('sin reloj: el frame no cambia y el efecto se borra solo', async ({ page }) => {
@@ -146,6 +172,17 @@ test.describe('movimiento reducido', () => {
     await page.getByRole('button', { name: 'Acariciar' }).click();
     await expect.poll(async () => Number(await canvas.getAttribute('data-fx'))).toBeGreaterThan(0);
     await expect.poll(async () => Number(await canvas.getAttribute('data-fx')), { timeout: 3000 }).toBe(0);
+  });
+
+  test('las nubes quedan quietas y Dormir cambia al instante', async ({ page }) => {
+    await abrir(page, base);
+    const canvas = page.getByRole('img', { name: /Clarita/ });
+    const n0 = await canvas.getAttribute('data-nubes');
+    await page.waitForTimeout(1500);
+    expect(await canvas.getAttribute('data-nubes')).toBe(n0);
+    await page.getByRole('button', { name: 'Dormir' }).click();
+    await expect(page.getByRole('button', { name: 'Despertar' })).toBeVisible();
+    expect(await canvas.getAttribute('data-transicion')).toBe('0');
   });
 });
 

@@ -1,8 +1,19 @@
-import { dormitorio, laguna } from '../arte/fondos';
+import { dormitorio, laguna, mascaraDither, nubes } from '../arte/fondos';
 import { FXP, PLUSH_PAL, SCN, paletaSprite } from '../arte/paleta';
 import { FX, PLUSH, SEQ, SP, frameEn, type Efecto, type Frame, type Grilla } from '../arte/sprites';
 import { animo } from '../logica/animo';
-import { ANIM_TICKS_POR_PASO_ANTIGUO as K, ANIM_TICK_MS, FX_QUITAR_MS, FX_VIDA_TICKS } from '../logica/balance';
+import {
+  ANIM_TICKS_POR_PASO_ANTIGUO as K,
+  ANIM_TICK_MS,
+  DESTELLO_FASES,
+  DESTELLO_PERIODO_TICKS,
+  FX_QUITAR_MS,
+  FX_VIDA_TICKS,
+  NUBES_TICKS_POR_PX,
+  TITILEO_FASES,
+  TITILEO_PERIODO_TICKS,
+  TRANSICION_TICKS_POR_PASO,
+} from '../logica/balance';
 import type { Estado } from '../logica/estado';
 import { esDeNoche } from '../logica/tiempo';
 import { avanzar } from './comportamiento';
@@ -11,6 +22,9 @@ export type EfectoAccion = 'alimentar' | 'jugar' | 'banar' | 'acariciar';
 
 const ANCHO_MIN = 96; // píxeles lógicos de ancho (el sprite mide 48): en un iPhone de 3x da el mismo encuadre que el mock
 const ALTO_MIN = 56; // el sprite (48) más aire arriba; si la escena es baja, la escala baja
+
+type Brillo = [x: number, y: number, fase: number, alt: number]; // alt: índice de paleta al que cambia
+type Fondo = { clave: string; lugar: string; c: HTMLCanvasElement; estrellas: Brillo[]; agua: Brillo[] };
 
 type Particula = { k: Efecto; x: number; y: number; vy: number };
 
@@ -30,7 +44,10 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
   const loCtx = lo.getContext('2d');
   const reducir = matchMedia('(prefers-reduced-motion: reduce)');
   // Solo la última entrada de cada cosa: fondo ya pintado y paleta del sprite.
-  let fondo: { clave: string; c: HTMLCanvasElement } | undefined;
+  let fondo: Fondo | undefined;
+  let previo: HTMLCanvasElement | undefined; // fondo del lugar anterior, solo mientras dura la transición
+  let paso = 0; // transición dither: 0 = ninguna, 1..4
+  let pasoTicks = 0;
   let pal: { pijama: boolean; p: string[] } | undefined;
   const sprites = new Map<string, HTMLCanvasElement>(); // frame|pijama ya pintado en 48x48
 
@@ -69,14 +86,64 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
       if (!fctx) return;
       const g = (lugar === 'laguna' ? laguna : dormitorio)(W, H);
       const bp = SCN[lugar][momento];
+      const estrellas: Brillo[] = [];
+      const agua: Brillo[] = [];
       for (let y = 0; y < H; y++)
         for (let x = 0; x < W; x++) {
-          fctx.fillStyle = bp[g[y * W + x] ?? 0] ?? '#000';
+          const v = g[y * W + x] ?? 0;
+          fctx.fillStyle = bp[v] ?? '#000';
           fctx.fillRect(x, y, 1, 1);
+          const estrella = lugar === 'laguna' ? v === 18 || v === 21 : v === 17 || v === 18;
+          // La estrella se apaga al color del cielo vecino; la onda destella al tono claro 15.
+          if (momento === 'night' && estrella) {
+            const l = g[y * W + x - 1] ?? 0;
+            estrellas.push([x, y, (x * 31 + y * 17) % TITILEO_FASES, l === v || l > 16 ? (g[y * W + x + 1] ?? 0) : l]);
+          } else if (lugar === 'laguna' && v === 11 && (x * 7 + y * 3) % 3 === 0) agua.push([x, y, (x * 31 + y * 17) % DESTELLO_FASES, 15]);
         }
-      fondo = { clave, c };
+      if (fondo && fondo.lugar !== lugar && !reducir.matches && !document.hidden && fondo.c.width === W && fondo.c.height === H) {
+        previo = fondo.c;
+        paso = 1;
+        pasoTicks = 0;
+      }
+      fondo = { clave, lugar, c, estrellas, agua };
     }
-    loCtx.drawImage(fondo.c, 0, 0);
+    // Reducido: t no avanza y todo queda como en el fondo original (nubes en su sitio, sin titileo).
+    const tt = reducir.matches ? 0 : t;
+    const dx = Math.floor(tt / NUBES_TICKS_POR_PX);
+    canvas.dataset.nubes = String(dx);
+    canvas.dataset.transicion = String(paso);
+    if (paso && previo) {
+      // Mezcla dither: costoso (W×H) pero solo durante los 4 ticks de la transición.
+      const nuevo = fondo.c.getContext('2d')?.getImageData(0, 0, W, H);
+      const viejo = previo.getContext('2d')?.getImageData(0, 0, W, H);
+      if (nuevo && viejo) {
+        for (let y = 0; y < H; y++)
+          for (let x = 0; x < W; x++) if (!mascaraDither(x, y, paso)) for (let k = 0, i = (y * W + x) * 4; k < 4; k++) nuevo.data[i + k] = viejo.data[i + k] ?? 0;
+        loCtx.putImageData(nuevo, 0, 0);
+      } else loCtx.drawImage(fondo.c, 0, 0);
+    } else {
+      loCtx.drawImage(fondo.c, 0, 0);
+      const bp = SCN[lugar][momento];
+      if (lugar === 'laguna') {
+        loCtx.fillStyle = bp[19] ?? '#fff';
+        for (const n of nubes(W, H))
+          for (const [rx, ry, w] of n.rects) {
+            const x0 = (((n.x + rx + dx) % W) + W) % W;
+            loCtx.fillRect(x0, n.y + ry, w, 1);
+            if (x0 + w > W) loCtx.fillRect(x0 - W, n.y + ry, w, 1); // envoltura sin salto
+          }
+      }
+      const brillar = (lista: Brillo[], periodo: number, fases: number) => {
+        const f = Math.floor(tt / periodo);
+        for (const [x, y, s, alt] of lista)
+          if ((f + s) % fases === 0) {
+            loCtx.fillStyle = bp[alt] ?? '#000';
+            loCtx.fillRect(x, y, 1, 1);
+          }
+      };
+      brillar(fondo.estrellas, TITILEO_PERIODO_TICKS, TITILEO_FASES);
+      brillar(fondo.agua, DESTELLO_PERIODO_TICKS, DESTELLO_FASES);
+    }
 
     const { sx, sy, base } = geo(lugar === 'laguna');
     const an = animo(estado).animacion;
@@ -141,6 +208,13 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
 
   function tick(): void {
     t++;
+    if (paso && ++pasoTicks >= TRANSICION_TICKS_POR_PASO) {
+      pasoTicks = 0;
+      if (++paso > 4) {
+        paso = 0;
+        previo = undefined;
+      }
+    }
     if (fxVida > 0) {
       fxVida--;
       fxT++;
@@ -190,6 +264,8 @@ export function crearEscena(escena: HTMLElement, canvas: HTMLCanvasElement) {
   function arrancar(): void {
     pararReloj();
     limpiarFx();
+    paso = 0;
+    previo = undefined;
     if (!reducir.matches && !document.hidden) arrancarReloj();
     dibujar();
   }

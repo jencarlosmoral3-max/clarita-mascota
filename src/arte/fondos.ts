@@ -1,5 +1,14 @@
 // Generadores deterministas portados tal cual de mocks/propuesta-b.html (mismo rng y semillas).
 function rng(a: number){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+// Nubes de la laguna (color 19 de la paleta): fuera de la grilla para poder derivar. Cada rect es [dx, dy, ancho] desde (x, y).
+export type Nube={x: number,y: number,rects: [number,number,number][]};
+export function nubes(W: number, H: number): Nube[]{
+  const hz=Math.floor(H*.5);
+  return ([[.2,.55,9],[.55,.7,6],[.86,.6,8]] as [number,number,number][]).map(([cx,cy,rx])=>({x:Math.floor(W*cx),y:Math.floor(hz*cy),
+    rects:[-1,0,1].map(dy=>{const h=rx-Math.abs(dy)*3;return [-h,dy,2*h+1] as [number,number,number]})}))}
+// Mezcla dither Bayer 4x4: true si el píxel (x, y) ya muestra el fondo nuevo en el paso 0..4.
+const BAYER=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
+export function mascaraDither(x: number,y: number,paso: number): boolean{return (BAYER[(y&3)*4+(x&3)]??0)<paso*4}
 export function laguna(W: number, H: number): Uint8Array{
   const g=new Uint8Array(W*H),r=rng(5),set=(x: number,y: number,v: number)=>{if(x>=0&&x<W&&y>=0&&y<H)g[y*W+x]=v};
   const hz=Math.floor(H*.5);
@@ -8,7 +17,6 @@ export function laguna(W: number, H: number): Uint8Array{
   for(let i=0;i<9;i++){const x=Math.floor(r()*W),y=Math.floor(hz*.31)+Math.floor(r()*Math.floor(hz*.2));set(x,y,21)}
   const mx=Math.floor(W*.78),my=Math.floor(hz*.42);
   for(let y=-3;y<=3;y++)for(let x=-3;x<=3;x++)if(x*x+y*y<=10)set(mx+x,my+y,20);
-  for(const [cx,cy,rx] of [[.2,.55,9],[.55,.7,6],[.86,.6,8]] as [number,number,number][])for(let y=-1;y<=1;y++)for(let x=-rx;x<=rx;x++)if(Math.abs(x)<=rx-Math.abs(y)*3)set(Math.floor(W*cx)+x,Math.floor(hz*cy)+y,19);
   const peaks=[[.04,.10*H,.5],[.30,.30*H,1.7],[.62,.15*H,.55],[1.02,.44*H,.95],[.44,.12*H,.8]] as [number,number,number][];
   for(let x=0;x<W;x++){let hh=0,lit=0;for(const [c,h,s] of peaks){const v=h-s*Math.abs(x-c*W);if(v>hh){hh=v;lit=x<c*W?1:0}}
     const top=Math.floor(hz-hh-(r()<.3?1:0));

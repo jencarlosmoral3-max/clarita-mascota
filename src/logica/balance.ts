@@ -28,7 +28,14 @@ export const HORA_FIN_NOCHE = 7;
 // Animación: paso lógico de 100 ms. Lo que antes contaba pasos de 300 ms ahora cuenta 3 pasos.
 export const ANIM_TICK_MS = 100;
 export const ANIM_MAX_TICKS_POR_VUELTA = 3;
-export const ANIM_BOB_TICKS = 3; // el cuerpo alterna idle0/idle1 cada 0,3 s mientras hay efecto
+export const MARGEN_X = 4; // px lógicos libres a cada lado de Clarita
+// Ocio en reposo: pesos relativos de cada acto (0 lo desactiva), duraciones en ticks [mín, máx].
+export const OCIO_PESOS = { caminar: 5, sentada: 2, cola: 2, mirar: 2, rascarse: 1 } as const;
+export const OCIO_PAUSA_TICKS = [20, 60] as const; // quieta en reposo entre actos
+export const OCIO_SENTADA_TICKS = [30, 80] as const; // 3 a 8 s
+export const OCIO_CAMINAR_MIN_PX = 12; // un paseo recorre al menos esto
+export const OCIO_MAX_SIN_CAMINAR = 300; // pasados 30 s sin caminar, el siguiente acto es un paseo
+export const BOSTEZO_ESPERA_TICKS = 4; // la transición al dormitorio dura 4 ticks; el bostezo empieza después
 export const ANIM_Z_TICKS = 6; // las Z de dormir suben un paso cada 0,6 s
 export const FX_QUITAR_MS = 1500; // con movimiento reducido, el efecto estático se borra a los 1,5 s
 export const FX_MAX = 40; // tope global de partículas; al pasarse se descartan las más viejas

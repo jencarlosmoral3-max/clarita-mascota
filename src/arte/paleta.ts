@@ -1,5 +1,6 @@
 // Datos copiados mecánicamente de mocks/propuesta-b.html.
-export const PAL: readonly string[] = ["#00000000","#1e1210","#3b231c","#5a3829","#84573d","#b97a42","#dba468","#f1ebdd","#bfb8a8","#dc9328","#170d0a","#fff4d8","#34190f","#a8786a","#8fd0f5","#d4176c","#a00f50","#f7ecf2","#ef4a95","#bcc7cd","#8b99a2","#66083a","#00000047"];
+// 23 = lengua rosa (no se apaga con el pijama).
+export const PAL: readonly string[] = ["#00000000","#1e1210","#3b231c","#5a3829","#84573d","#b97a42","#dba468","#f1ebdd","#bfb8a8","#dc9328","#170d0a","#fff4d8","#34190f","#a8786a","#8fd0f5","#d4176c","#a00f50","#f7ecf2","#ef4a95","#bcc7cd","#8b99a2","#66083a","#00000047","#f08aa0"];
 
 // Pijama apagado: los índices de ropa se leen como pelo.
 export const PJ_OFF: Readonly<Record<number, number>> = {"15":3,"16":2,"17":3,"18":4,"21":1};

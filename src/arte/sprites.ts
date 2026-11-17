@@ -356,8 +356,226 @@ const SPR = {
   ],
 } as const;
 
-export type Frame = keyof typeof SPR;
-export const SP = Object.fromEntries(Object.entries(SPR).map(([k, v]) => [k, dec(v)])) as Record<Frame, Grilla>;
+type FrameBase = keyof typeof SPR;
+const BASE = Object.fromEntries(Object.entries(SPR).map(([k, v]) => [k, dec(v)])) as Record<FrameBase, Grilla>;
+
+// Parche: rectángulo en (x, y). Carácter = índice base-36 de PAL, '.' = transparente (borra el píxel),
+// '-' = conservar el píxel de la base. Las coordenadas salen de los frames base idle0/idle1/sleep0.
+export type Parche = { x: number; y: number; filas: readonly string[] };
+export const PARCHES = {
+  patIzq: { x: 16, y: 42, filas: [
+    '-33333-',
+    '3343333',
+    'g22222g',
+    'ggggggg',
+    'mmmmmmm',
+  ] },
+  patDer: { x: 26, y: 42, filas: [
+    '-33333-',
+    '3343333',
+    'g22222g',
+    'ggggggg',
+    'mmmmmmm',
+  ] },
+  colaA: { x: 37, y: 28, filas: [
+    '-----------',
+    '------1----',
+    '-----161---',
+    '-11333331--',
+    '1433333661-',
+    '13333334331',
+    '.3433333331',
+    '.3333323461',
+    '-.332333331',
+    '-.333332331',
+    '--44323361.',
+    '--1443431..',
+    '--.11111..-',
+    '--.......--',
+    '---.....---',
+    '-----------',
+    '-----------',
+    '-----------',
+    '-----------',
+  ] },
+  colaB: { x: 37, y: 28, filas: [
+    '-----------',
+    '-----------',
+    '-----------',
+    '---.--.----',
+    '--......---',
+    '-..1..1..--',
+    '..141161..-',
+    '.11333331..',
+    '-433333661.',
+    '-3333334331',
+    '--433333331',
+    '--333323461',
+    '--332333331',
+    '--333332331',
+    '---4323361-',
+    '--1443431--',
+    '---11111---',
+    '-----------',
+    '-----------',
+  ] },
+  ojosIzq: { x: 16, y: 15, filas: [
+    '-999---------999-',
+    'aab99-------aab99',
+    'aaa99-------aaa99',
+    '9a999-------9a999',
+    '-999---------999-',
+  ] },
+  ojosDer: { x: 16, y: 15, filas: [
+    '-999---------999-',
+    '99aab-------99aab',
+    '99aaa-------99aaa',
+    '999a9-------999a9',
+    '-999---------999-',
+  ] },
+  ojosSentada: { x: 16, y: 17, filas: [
+    '-999---------999-',
+    '9aab9-------9aab9',
+    '9aaa9-------9aaa9',
+    '99a99-------99a99',
+    '-999---------999-',
+  ] },
+  ojosFelices: { x: 16, y: 15, filas: [
+    '34333-------44344',
+    '31113-------41114',
+    '14331-------14341',
+    '43444-------44433',
+    '43444-------44433',
+  ] },
+  bocaAbierta1: { x: 21, y: 23, filas: [
+    '-------',
+    '-1ccc1-',
+    '-1nnn1-',
+    '--nnn--',
+    '---n---',
+  ] },
+  ojosApretados: { x: 15, y: 18, filas: [
+    '-11-------------11-',
+    '-3-113-------311-3-',
+    '-1133---------3311-',
+  ] },
+  bocaMuyAbierta: { x: 19, y: 25, filas: [
+    '--1111111--',
+    '-1ccccccc1-',
+    '1ccccccccc1',
+    '1cnnnnnnnc1',
+    '-1nnnnnnn1-',
+    '--1111111--',
+  ] },
+  bocaApreta: { x: 21, y: 22, filas: [
+    '-------',
+    '-1ccc1-',
+    '-11111-',
+  ] },
+  peluche: { x: 20, y: 24, filas: [
+    '--11111--',
+    '-1eeeee1-',
+    '1ebeeeee1',
+    '199999991',
+    '199999991',
+    '1eeeeeek1',
+    '-1eeekk1-',
+    '--11111--',
+  ] },
+  rascaA: { x: 3, y: 27, filas: [
+    '--1-1-1---',
+    '-1666661--',
+    '-1666661--',
+    '-1666561--',
+    '--15551---',
+    '--14441---',
+    '---1441---',
+    '----14431-',
+    '-----1331-',
+    '------131-',
+  ] },
+  rascaB: { x: 3, y: 26, filas: [
+    '--1-1-1---',
+    '-1666661--',
+    '-1666661--',
+    '-1666561--',
+    '--15551---',
+    '--14441---',
+    '--14441---',
+    '---1441---',
+    '----14431-',
+    '-----1331-',
+    '------131-',
+  ] },
+  ojosGusto: { x: 16, y: 17, filas: [
+    '34333-------44344',
+    '31113-------41114',
+    '14331-------14341',
+    '43444-------44433',
+    '43444-------44433',
+  ] },
+} as const satisfies Record<string, Parche>;
+export type ParcheNombre = keyof typeof PARCHES;
+
+// Frames compuestos: base + parches, en orden. No hay grillas completas nuevas.
+export const COMPUESTOS = {
+  trotaI: { base: 'idle0', parches: ['patIzq'] },
+  trotaD: { base: 'idle0', parches: ['patDer'] },
+  sentada: { base: 'sleep0', parches: ['ojosSentada'] },
+  colaA: { base: 'idle0', parches: ['colaA'] },
+  colaB: { base: 'idle0', parches: ['colaB'] },
+  miraI: { base: 'idle0', parches: ['ojosIzq'] },
+  miraD: { base: 'idle0', parches: ['ojosDer'] },
+  rascaA: { base: 'sleep0', parches: ['ojosGusto'], ladeo: -1, despues: ['rascaA'] },
+  rascaB: { base: 'sleep0', parches: ['ojosGusto'], ladeo: -1, despues: ['rascaB'] },
+  sacudeI: { base: 'blink', parches: [], ladeo: -1 },
+  sacudeD: { base: 'blink', parches: [], ladeo: 1 },
+  comerAbierta: { base: 'idle1', parches: ['bocaAbierta1'] },
+  jugar: { base: 'idle0', parches: ['bocaApreta', 'peluche'] },
+  felizA: { base: 'idle0', parches: ['ojosFelices', 'colaA'] },
+  felizB: { base: 'idle0', parches: ['ojosFelices', 'colaB'] },
+  bostezo: { base: 'sleep0', parches: ['ojosApretados', 'bocaMuyAbierta'] },
+} as const satisfies Record<string, { base: FrameBase; parches: readonly ParcheNombre[]; ladeo?: -1 | 1; despues?: readonly ParcheNombre[] }>;
+
+export type Frame = FrameBase | keyof typeof COMPUESTOS;
+
+// Inclinación de cabeza por cizalla: desde la fila de la coronilla, 2 px las primeras LADEO_FILAS[0] filas,
+// 1 px hasta LADEO_FILAS[1] (orejas incluidas) y 0 en el cuerpo.
+export const LADEO_FILAS = [8, 24] as const;
+function ladear(g: Grilla, dir: -1 | 1): Grilla {
+  const top = Math.max(0, g.findIndex((f) => f.some(Boolean)) - 1);
+  return g.map((f, y) => {
+    const r = y - top;
+    const s = (r < 0 ? 0 : r <= LADEO_FILAS[0] ? 2 : r <= LADEO_FILAS[1] ? 1 : 0) * dir;
+    return s === 0 ? f : f.map((_, x) => f[x - s] ?? 0);
+  });
+}
+
+function aplicar(g: Grilla, parches: readonly ParcheNombre[]): void {
+  for (const n of parches) {
+    const p: Parche = PARCHES[n];
+    p.filas.forEach((fila, j) =>
+      [...fila].forEach((c, i) => {
+        const f = g[p.y + j];
+        if (c === '-' || !f || p.x + i >= f.length) return;
+        f[p.x + i] = c === '.' ? 0 : parseInt(c, 36);
+      }),
+    );
+  }
+}
+
+function componer(base: Grilla, parches: readonly ParcheNombre[], ladeo?: -1 | 1, despues: readonly ParcheNombre[] = []): Grilla {
+  const g = base.map((f) => f.slice());
+  aplicar(g, parches);
+  const r = ladeo ? ladear(g, ladeo) : g;
+  aplicar(r, despues);
+  return r;
+}
+
+export const SP = {
+  ...BASE,
+  ...Object.fromEntries(Object.entries(COMPUESTOS).map(([k, v]) => [k, componer(BASE[v.base], v.parches, 'ladeo' in v ? v.ladeo : undefined, 'despues' in v ? v.despues : undefined)])),
+} as Record<Frame, Grilla>;
 
 export const PLUSH: Grilla = dec(["..11..........",".1221.11111111","12231122222221","12222222322221",".1222222222221",".1444444444441","..11111111111."]);
 
@@ -497,19 +715,36 @@ export type Efecto = keyof typeof FXR;
 export const FX = Object.fromEntries(Object.entries(FXR).map(([k, v]) => [k, dec(v)])) as Record<Efecto, Grilla>;
 
 // Cada paso dura t ticks de ANIM_TICK_MS (100 ms); el ciclo se repite.
-export type Paso = { f: Frame; t: number };
-export const SEQ: Record<'reposo' | 'triste' | 'dormida', readonly Paso[]> = {
+// dx/dy: desplazamiento en píxeles de la grilla durante el paso.
+export type Paso = { f: Frame; t: number; dx?: number; dy?: number };
+export type SeqNombre = 'reposo' | 'triste' | 'dormida' | 'caminar' | 'sentada' | 'cola' | 'mirar' | 'rascarse' | 'comer' | 'jugar' | 'sacudirse' | 'feliz' | 'bostezo';
+const rep = (n: number, pasos: readonly Paso[]): Paso[] => Array.from({ length: n }, () => pasos).flat();
+export const SEQ: Record<SeqNombre, readonly Paso[]> = {
   reposo: [{ f: 'idle0', t: 6 }, { f: 'idle1', t: 6 }, { f: 'idle0', t: 6 }, { f: 'idle1', t: 6 }, { f: 'idle0', t: 3 }, { f: 'blink', t: 3 }],
   triste: [{ f: 'sad0', t: 6 }, { f: 'sad1', t: 6 }],
   dormida: [{ f: 'sleep0', t: 12 }, { f: 'sleep1', t: 12 }],
+  caminar: [{ f: 'trotaI', t: 2, dy: -1 }, { f: 'idle0', t: 2 }, { f: 'trotaD', t: 2, dy: -1 }, { f: 'idle0', t: 2 }],
+  sentada: [{ f: 'sentada', t: 30 }],
+  cola: rep(6, [{ f: 'colaA', t: 1 }, { f: 'colaB', t: 1 }]),
+  mirar: [{ f: 'miraI', t: 8 }, { f: 'idle0', t: 3 }, { f: 'miraD', t: 8 }],
+  rascarse: [{ f: 'sentada', t: 2 }, ...rep(5, [{ f: 'rascaA', t: 1 }, { f: 'rascaB', t: 1 }]), { f: 'sentada', t: 2 }],
+  // Espera 16 ticks mientras cae el hueso y mastica 10 con el hueso en la boca y las migas (FX_HUESO / FX_MIGA).
+  comer: [{ f: 'idle1', t: 16 }, ...rep(3, [{ f: 'comerAbierta', t: 2 }, { f: 'idle1', t: 1 }]), { f: 'idle1', t: 1 }],
+  jugar: rep(3, [{ f: 'jugar', t: 2 }, { f: 'jugar', t: 2, dy: -2 }, { f: 'jugar', t: 2 }, { f: 'jugar', t: 2, dy: -2 }]),
+  sacudirse: [...rep(2, [{ f: 'sacudeI', t: 2, dx: -1 }, { f: 'blink', t: 1 }, { f: 'sacudeD', t: 2, dx: 1 }, { f: 'blink', t: 1 }]), { f: 'blink', t: 2 }],
+  feliz: rep(7, [{ f: 'felizA', t: 1 }, { f: 'felizB', t: 1 }]),
+  bostezo: [{ f: 'sleep0', t: 3 }, { f: 'bostezo', t: 8 }, { f: 'sleep0', t: 3 }],
 };
 
-export function frameEn(seq: readonly Paso[], tick: number): Frame {
+// El paso de la secuencia que toca en ese tick (el ciclo se repite).
+export function pasoEn(seq: readonly Paso[], tick: number): Paso {
   const total = seq.reduce((a, p) => a + p.t, 0);
   let r = total > 0 ? ((tick % total) + total) % total : 0;
   for (const p of seq) {
-    if (r < p.t) return p.f;
+    if (r < p.t) return p;
     r -= p.t;
   }
-  return seq[0]?.f ?? 'idle0';
+  return seq[0] ?? { f: 'idle0', t: 1 };
 }
+
+export const frameEn = (seq: readonly Paso[], tick: number): Frame => pasoEn(seq, tick).f;

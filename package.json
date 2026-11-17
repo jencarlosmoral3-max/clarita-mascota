@@ -10,7 +10,8 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "typecheck": "tsc --noEmit",
-    "iconos": "node --experimental-strip-types scripts/iconos.ts"
+    "iconos": "node --experimental-strip-types scripts/iconos.ts",
+    "vista-previa": "node --experimental-strip-types scripts/vista-previa.ts"
   },
   "devDependencies": {
     "@fontsource/pixelify-sans": "^5.3.0",

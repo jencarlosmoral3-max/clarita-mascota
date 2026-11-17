@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { dormitorio, laguna } from '../../src/arte/fondos';
-import { PAL, SCN } from '../../src/arte/paleta';
-import { FX, ICONOS, PLUSH, SEQ, SP, frameEn } from '../../src/arte/sprites';
+import { PAL, PJ_OFF, SCN, paletaSprite } from '../../src/arte/paleta';
+import { COMPUESTOS, FX, ICONOS, PARCHES, PLUSH, SEQ, SP, frameEn } from '../../src/arte/sprites';
 
 describe('sprites', () => {
   for (const [nombre, g] of Object.entries(SP)) {
@@ -64,5 +64,47 @@ describe('secuencias', () => {
     expect(SEQ.reposo.reduce((a, p) => a + p.t, 0)).toBe(30);
     expect(SEQ.reposo.some((p) => p.f === 'blink')).toBe(true);
     expect(frameEn(SEQ.reposo, 29)).toBe('blink');
+  });
+});
+
+describe('parches y compuestos', () => {
+  for (const [nombre, p] of Object.entries(PARCHES)) {
+    it(`parche ${nombre}: cabe en 48x48 y solo usa índices de PAL, '.' o '-'`, () => {
+      expect(p.x).toBeGreaterThanOrEqual(0);
+      expect(p.y).toBeGreaterThanOrEqual(0);
+      expect(p.y + p.filas.length).toBeLessThanOrEqual(48);
+      for (const fila of p.filas) {
+        expect(p.x + fila.length).toBeLessThanOrEqual(48);
+        for (const c of fila) {
+          if (c === '.' || c === '-') continue;
+          expect(PAL[parseInt(c, 36)]).toBeDefined();
+        }
+      }
+    });
+  }
+
+  for (const [nombre, c] of Object.entries(COMPUESTOS)) {
+    it(`compuesto ${nombre} difiere de su base ${c.base}`, () => {
+      expect(JSON.stringify(SP[nombre as keyof typeof COMPUESTOS])).not.toBe(JSON.stringify(SP[c.base]));
+    });
+  }
+
+  for (const [nombre, c] of Object.entries(COMPUESTOS)) {
+    if (!('ladeo' in c)) continue;
+    it(`compuesto ladeado ${nombre}: 48x48, sin recortes ni agujeros (píxeles ±10 %)`, () => {
+      const cuenta = (g: number[][]) => g.flat().filter(Boolean).length;
+      const g = SP[nombre as keyof typeof COMPUESTOS];
+      expect(g).toHaveLength(48);
+      for (const f of g) expect(f).toHaveLength(48);
+      const n = cuenta(g), b = cuenta(SP[c.base]);
+      expect(Math.abs(n - b)).toBeLessThanOrEqual(b * 0.1);
+      expect(JSON.stringify(g)).not.toBe(JSON.stringify(SP[c.base]));
+    });
+  }
+
+  it('la lengua (23) existe y no se apaga con el pijama', () => {
+    expect(PAL[23]).toBeDefined();
+    expect(PJ_OFF[23]).toBeUndefined();
+    expect(paletaSprite(false)[23]).toBe(PAL[23]);
   });
 });

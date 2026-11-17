@@ -9,15 +9,23 @@ export const TICK_MS = 30 * 1000;
 export const MS_POR_HORA = 60 * 60 * 1000;
 
 // Cambio por hora de cada medidor.
-export const RITMO_DESPIERTA = { comida: -6, diversion: -5, energia: -4, higiene: -3 } as const;
-export const RITMO_DORMIDA = { comida: -2, diversion: 0, energia: 15, higiene: 0 } as const;
+export const RITMO_DESPIERTA = { comida: -8, diversion: -6, energia: -5, higiene: -2 } as const;
+export const RITMO_DORMIDA = { comida: -3, diversion: 0, energia: 12, higiene: 0 } as const;
 
 export const SUBIDA_COMIDA = 100;
-export const SUBIDA_DIVERSION = 100;
+export const SUBIDA_DIVERSION = 60; // con 60 hace falta jugar dos veces para llenarla: el gasto de energía pesa
 export const SUBIDA_HIGIENE = 100;
 // Acariciar: sube diversión un poco y da cariño solo si diversión estaba bajo UMBRAL_CUIDADO_UTIL.
 export const SUBIDA_DIVERSION_ACARICIAR = 10;
 export const CARINO_POR_CUIDADO = 2;
+export const ENERGIA_MIN_JUGAR = 20; // sin energía Clarita no puede jugar: tiene que dormir
+export const LLENO = 95; // con el medidor propio a este nivel el cuidado se bloquea: evita ganar cariño sin límite repitiendo cuidados sin que pase el tiempo
+// Lo que cuesta cada cuidado en otros medidores (cambio aplicado tras la subida; paran en PISO).
+export const COSTO_ACCION = {
+  jugar: { energia: -15, higiene: -10, comida: -5 },
+  alimentar: { higiene: -4 },
+  banar: { energia: -5, diversion: -5 },
+} as const;
 
 export const INICIAL = { comida: 80, energia: 80, higiene: 80, diversion: 80, carino: 50 } as const;
 

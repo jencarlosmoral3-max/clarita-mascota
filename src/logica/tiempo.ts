@@ -11,7 +11,7 @@ import {
 import type { Estado } from './estado';
 
 // Un medidor ya bajo el piso no sube por el piso; los aumentos topan en MAX.
-const mover = (valor: number, cambio: number): number =>
+export const mover = (valor: number, cambio: number): number =>
   cambio < 0 ? Math.min(valor, Math.max(PISO, valor + cambio)) : Math.min(MAX, valor + cambio);
 
 export function aplicarTiempo(estado: Estado, ahora: number): Estado {

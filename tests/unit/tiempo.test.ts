@@ -26,10 +26,10 @@ describe('aplicarTiempo', () => {
   });
   test('1 hora despierta: valores exactos', () => {
     const r = aplicarTiempo(base(), T0 + MS_POR_HORA);
-    expect(r.comida).toBeCloseTo(94, 9);
-    expect(r.diversion).toBeCloseTo(95, 9);
-    expect(r.energia).toBeCloseTo(96, 9);
-    expect(r.higiene).toBeCloseTo(97, 9);
+    expect(r.comida).toBeCloseTo(92, 9);
+    expect(r.diversion).toBeCloseTo(94, 9);
+    expect(r.energia).toBeCloseTo(95, 9);
+    expect(r.higiene).toBeCloseTo(98, 9);
     expect(r.ultimaVez).toBe(T0 + MS_POR_HORA);
   });
   test('3 semanas = 24 h, nada bajo el piso, ultimaVez real', () => {
@@ -41,10 +41,10 @@ describe('aplicarTiempo', () => {
     for (const k of MEDIDORES) expect(tres[k]).toBeGreaterThanOrEqual(PISO);
     expect(tres.comida).toBe(PISO);
   });
-  test('dormida: comida -2, energía +15, resto quieto', () => {
+  test('dormida: comida -3, energía +12, resto quieto', () => {
     const r = aplicarTiempo(base({ dormida: true, energia: 50 }), T0 + MS_POR_HORA);
-    expect(r.comida).toBeCloseTo(98, 9);
-    expect(r.energia).toBeCloseTo(65, 9);
+    expect(r.comida).toBeCloseTo(97, 9);
+    expect(r.energia).toBeCloseTo(62, 9);
     expect(r.diversion).toBe(100);
     expect(r.higiene).toBe(100);
   });

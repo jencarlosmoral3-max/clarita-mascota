@@ -63,9 +63,9 @@ test('Alimentar sube comida y cariño, y persiste al recargar', async ({ page })
   expect(await valor(page, 'Comida')).toBe(100);
 });
 
-test('tras 10 h de ausencia la comida baja a ~40', async ({ page }) => {
+test('tras 10 h de ausencia la comida baja a ~20', async ({ page }) => {
   await abrir(page, (ahora) => ({ version: 1, comida: 100, energia: 100, higiene: 100, diversion: 100, carino: 100, dormida: false, pijama: false, ultimaVez: ahora - 10 * 3600 * 1000 }));
-  expect(Math.abs((await valor(page, 'Comida')) - 40)).toBeLessThanOrEqual(1);
+  expect(Math.abs((await valor(page, 'Comida')) - 20)).toBeLessThanOrEqual(1);
 });
 
 test('ultimaVez en el futuro: carga sin error y los medidores no cambian', async ({ page }) => {

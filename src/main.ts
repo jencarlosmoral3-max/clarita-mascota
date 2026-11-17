@@ -10,6 +10,7 @@ import { aplicarTiempo, esDeNoche } from './logica/tiempo';
 import { esIOS, esInstalada, registrarSW } from './pwa';
 import { crearSonido } from './audio/sonido';
 import { crearInterfaz } from './ui/interfaz';
+import { CLAVE_TUTORIAL, crearTutorial } from './ui/tutorial';
 
 const app = document.querySelector<HTMLElement>('#app');
 const instalar = document.querySelector<HTMLElement>('#instalar');
@@ -26,6 +27,14 @@ function abrirAlmacen(): Almacen {
   }
 }
 
+function leerTutorial(almacen: Almacen): boolean {
+  try {
+    return almacen.getItem(CLAVE_TUTORIAL) !== null;
+  } catch {
+    return false;
+  }
+}
+
 function jugarJuego(raiz: HTMLElement): void {
   const almacen = abrirAlmacen();
   const cargado = cargar(almacen, Date.now());
@@ -36,12 +45,14 @@ function jugarJuego(raiz: HTMLElement): void {
     const ahora = Date.now();
     ui.pintar(estado, ahora);
     sonido.ambiente({ noche: esDeNoche(ahora), dormida: estado.dormida });
+    tutorial.actualizar();
   };
   const guardarYa = (): void => void guardar(almacen, estado, soloLectura);
   const sonido = crearSonido(almacen);
   const ui = crearInterfaz(raiz, {
     sonidoActivo: sonido.activo(),
     alSonido: () => sonido.alternar(),
+    alGuia: () => tutorial.abrir(),
     alAccionar: (accion) => {
       estado = aplicarTiempo(estado, Date.now());
       if (!puede(estado, accion)) return;
@@ -51,8 +62,11 @@ function jugarJuego(raiz: HTMLElement): void {
       pintar();
       const efecto = EFECTOS[accion];
       if (efecto) ui.efecto(efecto);
+      tutorial.alAccionar(accion);
     },
   });
+  const tutorial = crearTutorial(raiz, { puede: (a) => puede(estado, a), tic: () => sonido.reaccion('tic'), almacen });
+  if (!leerTutorial(almacen)) tutorial.abrir();
 
   const refrescar = (): void => {
     estado = aplicarTiempo(estado, Date.now());

@@ -21,8 +21,9 @@ test.afterEach(() => {
 });
 
 // Instalada (WebKit no emula display-mode) y, si se pide, con partida sembrada solo la primera vez.
-async function abrir(page: Page, semilla?: (ahora: number) => Record<string, unknown>): Promise<void> {
+async function abrir(page: Page, semilla?: (ahora: number) => Record<string, unknown>, conTutorial = false): Promise<void> {
   await page.addInitScript(() => Object.defineProperty(navigator, 'standalone', { value: true }));
+  if (!conTutorial) await page.addInitScript(() => localStorage.setItem('clarita.tutorial', '1'));
   if (semilla) {
     await page.addInitScript(
       ({ fuente }) => {

@@ -25,18 +25,33 @@ arte con vista previa antes de integrar.
 
 | Hito | Estado |
 |---|---|
-| M1 motor (reloj 100 ms, SEQ con duración, sprites cacheados) | En curso |
-| M2 arte por parches + vista previa | No iniciado. Compuerta: aprobación del CTO |
-| M3 escenario vivo | No iniciado |
+| M1 motor (reloj 100 ms, SEQ con duración, sprites cacheados) | Cerrado, PR #12 |
+| M2 arte por parches + vista previa | En curso, rama `m2-arte`. Compuerta: aprobación del CTO |
+| M3 escenario vivo | En curso, rama `m3-escenario` |
 | M4 interfaz y partículas | No iniciado |
 | M5 comportamiento integrado | No iniciado. Depende de M2 aprobado |
+
+### M1 motor (PR #12)
+
+- Reloj lógico de 100 ms (`setTimeout` encadenado + un `requestAnimationFrame`), pausado en segundo
+  plano; con movimiento reducido no hay reloj. `avanzar` en `src/escena/comportamiento.ts`.
+- `SEQ` con pasos `{f, t}` y `frameEn`; ritmo visible igual que antes. Sprite cacheado por
+  `frame|pijama`; `data-x` en el canvas.
+- Verificado: typecheck, 88/88 unit, build, 18/18 e2e, CI verde. `/code-review` y `/ponytail-review`.
+- Hallazgos aplicados: sprite sin contexto no se cachea; redibujo al volver de segundo plano; test
+  de toque sin `new Function` anidado.
+- Hallazgos rechazados: redibujar solo si cambió algo (M3 y M5 cambian píxeles casi cada paso);
+  deuda de pasos descartada con timers lentos (diseño: sin saltos); constante `K` de migración (M4
+  reescribe las partículas); duraciones de `SEQ` en `sprites.ts` (dato de arte, decisión del plan).
+- **Pendiente para M5**: `efecto()` y el peluche usan la x centrada de `geo()`, no `sprX`.
+- No verificado: pausa real con `document.hidden`, rendimiento en iPhone. Codex: no verificado.
 
 ## Estado (2026-11-16)
 
 - **El juego es jugable en local**: `npm run dev` (en escritorio se juega directo; en iPhone sin
   instalar muestra la pantalla de instalación). Medidores, 6 acciones, tocar a Clarita, pijama,
   día/noche, dormitorio al dormir, animación y efectos, guardado local, offline.
-- `main` verificado: `npm run typecheck` limpio, `npm test` 75/75, `npm run e2e` 17/17 (WebKit,
+- `main` verificado: `npm run typecheck` limpio, `npm test` 88/88, `npm run e2e` 18/18 (WebKit,
   perfil iPhone 13).
 - Repo: GitHub público `jencarlosmoral3-max/clarita-mascota`. `gh` y `git push/fetch` se corren con
   `GH_TOKEN=$(gh auth token -u jencarlosmoral3-max)`; la cuenta activa global de `gh` sigue siendo
